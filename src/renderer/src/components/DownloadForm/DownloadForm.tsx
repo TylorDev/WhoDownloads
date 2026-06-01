@@ -37,6 +37,7 @@ function DownloadForm({
 }: DownloadFormProps): JSX.Element {
   const isDisabled = isDownloading || isPreviewLoading
   const isUrlInputDisabled = isDownloading
+  const isFormatControlDisabled = isDisabled || quickDownloadEnabled
 
   return (
     <form className="download-form" onSubmit={onSubmit}>
@@ -77,7 +78,7 @@ function DownloadForm({
             className="form-control form-control--select"
             value={format}
             onChange={(event) => onFormatChange(event.target.value as DownloadFormat)}
-            disabled={isDisabled}
+            disabled={isFormatControlDisabled}
           >
             <option value="mp4">MP4 compatible</option>
             <option value="mp3">MP3 audio</option>
@@ -91,7 +92,7 @@ function DownloadForm({
             className="form-control form-control--select"
             value={quality}
             onChange={(event) => onQualityChange(event.target.value as DownloadQuality)}
-            disabled={isDisabled}
+            disabled={isFormatControlDisabled}
           >
             {format === 'mp4' ? (
               <>

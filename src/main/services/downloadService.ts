@@ -80,7 +80,7 @@ export async function downloadVideo(
 
     const ytDlpPath = getWindowsBinaryPath(app, 'yt-dlp')
     const ffmpegPath = getWindowsBinaryPath(app, 'ffmpeg')
-    const outputTemplate = join(outputDirectory, '%(title).180B [%(id)s].%(ext)s')
+    const outputTemplate = join(outputDirectory, '%(title).180B.%(ext)s')
     const args = getYtDlpArgs(input, ffmpegPath, outputTemplate)
     const result = await runYtDlpDownload(ytDlpPath, args, input.format, (progress) => {
       emitProgress(sender, withTaskId(input, progress))

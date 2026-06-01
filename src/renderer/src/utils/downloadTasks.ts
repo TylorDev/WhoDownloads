@@ -33,6 +33,10 @@ export function createDownloadTask(
   }
 }
 
+export function getDownloadTaskTitle(task: DownloadTask): string {
+  return task.metadata?.title || task.url
+}
+
 export function applyTaskProgress(tasks: DownloadTask[], progress: DownloadProgress): DownloadTask[] {
   if (!progress.taskId) {
     return tasks

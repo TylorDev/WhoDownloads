@@ -147,7 +147,7 @@ describe('downloadVideo', () => {
 
     expect(runYtDlpDownload).toHaveBeenCalledWith(
       'C:\\bin\\yt-dlp.exe',
-      expect.arrayContaining(['-o', 'D:\\Videos\\%(title).180B [%(id)s].%(ext)s']),
+      expect.arrayContaining(['-o', 'D:\\Videos\\%(title).180B.%(ext)s']),
       'mp4',
       expect.any(Function)
     )

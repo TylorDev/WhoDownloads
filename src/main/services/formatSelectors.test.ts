@@ -34,7 +34,9 @@ describe('getYtDlpArgs', () => {
 
     expect(args).toContain('--merge-output-format')
     expect(args).toContain('mp4')
+    expect(args).toContain('--embed-metadata')
     expect(args.join(' ')).toContain('[height<=1080]')
+    expect(args.join(' ')).toContain('meta_album')
     expect(args).not.toContain('--extract-audio')
     expect(args.at(-1)).toBe('https://youtu.be/video')
   })
@@ -55,6 +57,8 @@ describe('getYtDlpArgs', () => {
     expect(args).toContain('--embed-thumbnail')
     expect(args).toContain('--embed-metadata')
     expect(joined).toContain('meta_artist')
+    expect(joined).toContain('meta_album')
+    expect(joined).toContain('-metadata album=%(webpage_url)s')
     expect(joined).toContain('meta_album_artist')
     expect(joined).toContain('meta_author')
     expect(joined).toContain('WOAR')

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { applyTaskProgress, applyTaskResult, createDownloadTask } from './downloadTasks'
+import {
+  applyTaskProgress,
+  applyTaskResult,
+  createDownloadTask,
+  getDownloadTaskTitle
+} from './downloadTasks'
 
 describe('downloadTasks helpers', () => {
   it('creates queued download tasks', () => {
@@ -57,5 +62,27 @@ describe('downloadTasks helpers', () => {
       filePath: 'C:\\Downloads\\song.mp3'
     })
     expect(failedTasks[1]).toMatchObject({ status: 'failed', error: 'failed' })
+  })
+
+  it('uses metadata title with URL fallback for display titles', () => {
+    const task = createDownloadTask(
+      { url: 'https://youtu.be/abc', format: 'mp4', quality: '720', taskId: 't1' },
+      {
+        title: 'Video title',
+        artist: '',
+        year: '',
+        authorUrl: 'https://youtu.be/abc',
+        url: 'https://youtu.be/abc'
+      }
+    )
+    const taskWithoutMetadata = createDownloadTask({
+      url: 'https://youtu.be/no-title',
+      format: 'mp4',
+      quality: '720',
+      taskId: 't2'
+    })
+
+    expect(getDownloadTaskTitle(task)).toBe('Video title')
+    expect(getDownloadTaskTitle(taskWithoutMetadata)).toBe('https://youtu.be/no-title')
   })
 })
