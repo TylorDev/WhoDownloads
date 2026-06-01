@@ -18,6 +18,12 @@
   flex-direction: column;
 }
 
+.app-container--wide {
+  max-width: none;
+  padding-right: 1rem;
+  padding-left: 1rem;
+}
+
 .break-anywhere {
   overflow-wrap: anywhere;
   word-break: break-word;
@@ -85,17 +91,93 @@
 }
 
 .youtube-page {
+  width: 100%;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 20rem;
+  align-items: stretch;
   gap: 1.1rem;
   min-height: calc(100vh - 8rem);
+  transition: grid-template-columns $transition-fast;
+
+  &--side-closed {
+    grid-template-columns: minmax(0, 1fr);
+
+    .youtube-page__side {
+      display: none;
+    }
+  }
+
+  &__main {
+    position: relative;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__toggle {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 2;
+    min-height: 2.35rem;
+    max-width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 0 0.75rem;
+    border: 1px solid $color-border-strong;
+    border-radius: $radius-sm;
+    background: rgba(10, 10, 10, 0.88);
+    backdrop-filter: blur(16px) saturate(140%);
+    color: $color-text-muted;
+    font-size: 0.8125rem;
+    font-weight: 760;
+    cursor: pointer;
+    transition:
+      background $transition-fast,
+      border-color $transition-fast,
+      color $transition-fast;
+
+    svg {
+      flex-shrink: 0;
+    }
+
+    &:hover,
+    &:focus-visible {
+      border-color: $color-text-subtle;
+      background: rgba(20, 20, 20, 0.94);
+      color: $color-text;
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: $shadow-focus;
+    }
+  }
+
+  &__toggle-count {
+    min-width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid $color-border;
+    background: $color-surface-raised;
+    color: $color-text;
+    font-size: 0.75rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
 
   .youtube-browser {
     position: relative;
     inset: auto;
     z-index: 1;
+    flex: 1;
     height: calc(100vh - 8rem);
-    min-height: calc(100vh - 8rem);
+    min-height: 30rem;
     overflow: hidden;
     border: 1px solid $color-border;
     border-radius: $radius-md;
@@ -109,6 +191,12 @@
 
   &__side {
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+
+    .cola {
+      margin-top: 0;
+    }
   }
 }
 
@@ -116,12 +204,42 @@
   .settings-panel__directory,
   .youtube-page {
     grid-template-columns: 1fr;
+
+    &--side-closed {
+      grid-template-columns: 1fr;
+    }
+
+    .youtube-browser {
+      height: 58vh;
+      min-height: 24rem;
+    }
   }
 }
 
 @media (max-width: $breakpoint-sm) {
   .app-container {
     min-height: calc(100vh - 4.75rem);
+  }
+
+  .app-container--wide {
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+  }
+
+  .youtube-page {
+    gap: 0.85rem;
+    min-height: calc(100vh - 7.5rem);
+
+    &__toggle {
+      top: 0.6rem;
+      right: 0.6rem;
+      max-width: calc(100% - 1.2rem);
+    }
+
+    .youtube-browser {
+      height: 56vh;
+      min-height: 21rem;
+    }
   }
 }
 

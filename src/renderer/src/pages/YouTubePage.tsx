@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { Cola, StatusPanel, YouTubeBrowser } from '../components'
 import { useDownloadContext } from '../contexts/DownloadContext'
 import { useNavigation } from '../contexts/NavigationContext'
@@ -11,6 +12,7 @@ function YouTubePage(): JSX.Element {
   const youtube = useYouTubeContext()
   const download = useDownloadContext()
   const { setActivePage } = useNavigation()
+  const [isSidePanelOpen, setIsSidePanelOpen] = useState(true)
 
   useEffect(() => {
     void youtube.ensureYouTubePreloadPath()
@@ -49,15 +51,28 @@ function YouTubePage(): JSX.Element {
   }
 
   return (
-    <section className="youtube-page">
-      <YouTubeBrowser
-        youtubeWebviewPreloadPath={youtube.youtubeWebviewPreloadPath}
-        clickedVideos={youtube.clickedVideos}
-        youtubeWebviewRef={youtube.youtubeWebviewRef}
-        onUseVideo={useVideo}
-        onQuickDownloadVideo={quickDownload}
-      />
-      <div className="youtube-page__side">
+    <section className={`youtube-page ${isSidePanelOpen ? '' : 'youtube-page--side-closed'}`}>
+      <div className="youtube-page__main">
+        <button
+          className="youtube-page__toggle"
+          type="button"
+          aria-pressed={isSidePanelOpen}
+          aria-label={isSidePanelOpen ? 'Ocultar lista lateral' : 'Mostrar lista lateral'}
+          onClick={() => setIsSidePanelOpen((isOpen) => !isOpen)}
+        >
+          {isSidePanelOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
+          <span>{isSidePanelOpen ? 'Ocultar lista' : 'Mostrar lista'}</span>
+          <span className="youtube-page__toggle-count">{queueVideos.length}</span>
+        </button>
+        <YouTubeBrowser
+          youtubeWebviewPreloadPath={youtube.youtubeWebviewPreloadPath}
+          clickedVideos={youtube.clickedVideos}
+          youtubeWebviewRef={youtube.youtubeWebviewRef}
+          onUseVideo={useVideo}
+          onQuickDownloadVideo={quickDownload}
+        />
+      </div>
+      <div className="youtube-page__side" aria-hidden={!isSidePanelOpen}>
         <Cola
           title="Videos clickeados"
           emptyMessage="Abre YouTube dentro de la app y entra a videos para agregarlos a esta lista."

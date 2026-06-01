@@ -35,11 +35,15 @@ function ActivePage(): JSX.Element {
 }
 
 function AppContent(): JSX.Element {
+  const { activePage } = useNavigation()
+  const containerClassName =
+    activePage === 'youtube' ? 'app-container app-container--wide' : 'app-container'
+
   return (
     <UrlIntakeProvider>
       <main className="app-shell">
         <AppHeader />
-        <div className="app-container">
+        <div className={containerClassName}>
           <ActivePage />
         </div>
       </main>
