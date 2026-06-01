@@ -1,5 +1,43 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
+import type {
+  DownloadInput,
+  DownloadProgress,
+  DownloadResult,
+  MetadataResult,
+  PlaylistResult,
+  YouTubeVideoClickedEvent
+} from '../shared/downloadTypes'
 
 contextBridge.exposeInMainWorld('whoDownloads', {
-  version: '0.0.1'
+  version: '0.0.1',
+  getYouTubeWebviewPreloadPath: (): Promise<string> =>
+    ipcRenderer.invoke('get-youtube-webview-preload-path'),
+  previewVideo: (url: string): Promise<MetadataResult> => ipcRenderer.invoke('preview-video', url),
+  downloadVideo: (input: DownloadInput): Promise<DownloadResult> =>
+    ipcRenderer.invoke('download-video', input),
+  openYouTubeBrowser: (): Promise<void> => ipcRenderer.invoke('open-youtube-browser'),
+  closeYouTubeBrowser: (): Promise<void> => ipcRenderer.invoke('close-youtube-browser'),
+  fetchPlaylist: (url: string): Promise<PlaylistResult> => ipcRenderer.invoke('fetch-playlist', url),
+  onYouTubeVideoClicked: (callback: (event: YouTubeVideoClickedEvent) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: YouTubeVideoClickedEvent): void => {
+      callback(payload)
+    }
+
+    ipcRenderer.on('youtube-video-clicked', listener)
+
+    return (): void => {
+      ipcRenderer.removeListener('youtube-video-clicked', listener)
+    }
+  },
+  onDownloadProgress: (callback: (progress: DownloadProgress) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, progress: DownloadProgress): void => {
+      callback(progress)
+    }
+
+    ipcRenderer.on('download-progress', listener)
+
+    return (): void => {
+      ipcRenderer.removeListener('download-progress', listener)
+    }
+  }
 })

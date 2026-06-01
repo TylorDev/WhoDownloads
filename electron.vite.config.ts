@@ -10,13 +10,26 @@ export default defineConfig({
   },
   preload: {
     build: {
-      outDir: 'out/preload'
+      outDir: 'out/preload',
+      rollupOptions: {
+        input: {
+          index: resolve(__dirname, 'src/preload/index.ts'),
+          youtubeWebview: resolve(__dirname, 'src/preload/youtubeWebview.ts')
+        }
+      }
     }
   },
   renderer: {
     root: resolve(__dirname, 'src/renderer'),
     build: {
       outDir: resolve(__dirname, 'out/renderer')
+    },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          api: 'modern-compiler'
+        }
+      }
     },
     plugins: [react()]
   }

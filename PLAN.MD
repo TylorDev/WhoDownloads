@@ -1,4 +1,4 @@
-# Plan Para Downloader YouTube Electron + TS + shadcn
+@# Plan Para Downloader YouTube Electron + TS + shadcn
 
 ## Resumen
 
@@ -13,7 +13,7 @@ Crear una app desktop local, no SaaS, para descargar video/audio desde URLs de Y
 - `ffmpeg + ffprobe`: conversión, muxing, extracción de audio, thumbnails embebidos y validación de metadatos.
 - `execa`: ejecutar `yt-dlp`/`ffmpeg` desde el proceso main con control de stdout/stderr.
 - `zod`: validar inputs, preferencias, jobs y mensajes IPC.
-- `zustand` o `jotai`: estado simple para cola, progreso y preferencias.
+- React Context: estado simple para cola, progreso y preferencias.
 - `better-sqlite3 + drizzle`: historial local, configuración, cola persistente y archivos descargados.
 - `electron-builder`: empaquetado para Windows/macOS/Linux con binarios incluidos.
 

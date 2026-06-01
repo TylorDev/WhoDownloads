@@ -1,0 +1,28 @@
+@use "./styles/variables" as *;
+
+.app-shell {
+  min-height: 100vh;
+  background: $color-page;
+  color: $color-text;
+}
+
+.app-container {
+  width: 100%;
+  max-width: $container-width;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  &--hidden {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+.break-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

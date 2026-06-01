@@ -1,0 +1,71 @@
+@use "../../styles/variables" as *;
+
+.status-panel {
+  margin-top: 2rem;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface-muted;
+  padding: 1rem;
+
+  &__header {
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  &__meta {
+    color: $color-text-subtle;
+    font-size: 0.875rem;
+  }
+
+  &__message {
+    margin: 0.75rem 0 0;
+    color: $color-text-muted;
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  &__version {
+    margin: 1rem 0 0;
+    color: $color-text-faint;
+    font-size: 0.75rem;
+  }
+}
+
+.status-label {
+  color: #e4e4e7;
+  font-size: 0.875rem;
+  font-weight: 650;
+
+  &--error {
+    color: $color-error-soft;
+  }
+
+  &--success {
+    color: $color-success-soft;
+  }
+}
+
+.progress-bar {
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: $color-border;
+
+  &__fill {
+    height: 100%;
+    border-radius: inherit;
+    background: $color-accent;
+    transition: width 300ms ease;
+
+    &--error {
+      background: $color-error;
+    }
+
+    &--success {
+      background: $color-success;
+    }
+  }
+}

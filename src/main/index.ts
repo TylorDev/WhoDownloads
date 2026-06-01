@@ -1,5 +1,7 @@
 import { app, BrowserWindow } from 'electron'
 import { join } from 'node:path'
+import { registerIpcHandlers } from './ipc'
+import { forwardConsoleErrorsToTerminal } from './utils/consoleForwarder'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -11,7 +13,9 @@ function createWindow(): void {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      sandbox: true,
+      webviewTag: true
     }
   })
 
@@ -20,6 +24,9 @@ function createWindow(): void {
   } else {
     void mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  forwardConsoleErrorsToTerminal(mainWindow.webContents, 'renderer')
+  registerIpcHandlers(mainWindow)
 }
 
 app.whenReady().then(() => {

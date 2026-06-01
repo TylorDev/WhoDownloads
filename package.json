@@ -6,9 +6,11 @@
   "author": "TylorDev",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "node scripts/dev.mjs",
     "build": "electron-vite build",
-    "preview": "electron-vite preview"
+    "preview": "electron-vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -19,12 +21,12 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
-    "autoprefixer": "^10.4.19",
     "electron": "^31.0.2",
     "electron-vite": "^2.3.0",
-    "postcss": "^8.4.39",
-    "tailwindcss": "^3.4.7",
+    "sass": "^1.100.0",
+    "sass-embedded": "^1.100.0",
     "typescript": "^5.5.4",
-    "vite": "^5.3.4"
+    "vite": "^5.3.4",
+    "vitest": "^4.1.8"
   }
 }

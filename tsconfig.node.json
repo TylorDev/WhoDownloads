@@ -6,7 +6,7 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM"],
     "types": ["node"],
     "strict": true,
     "noEmit": true
@@ -16,6 +16,7 @@
     "postcss.config.js",
     "tailwind.config.js",
     "src/main/**/*.ts",
-    "src/preload/**/*.ts"
+    "src/preload/**/*.ts",
+    "src/shared/**/*.ts"
   ]
 }
