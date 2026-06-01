@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true
+  },
+  "include": [
+    "electron.vite.config.ts",
+    "postcss.config.js",
+    "tailwind.config.js",
+    "src/main/**/*.ts",
+    "src/preload/**/*.ts"
+  ]
+}
