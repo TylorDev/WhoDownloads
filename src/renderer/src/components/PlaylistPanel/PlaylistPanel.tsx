@@ -1,30 +1,43 @@
 import type { FormEvent } from 'react'
-import type { PlaylistEntry } from '../../types/ipc'
-import { formatDuration } from '../../utils/formatDuration'
+import Cola from '../Cola/Cola'
+import type { QueueVideo } from '../Cola/types'
+import type { PendingLongPlaylist } from '../../utils/playlistLimit'
 import './PlaylistPanel.scss'
 
 interface PlaylistPanelProps {
   playlistUrl: string
   playlistTitle: string
-  entries: PlaylistEntry[]
+  videos: QueueVideo[]
+  pendingLongPlaylist: PendingLongPlaylist | null
   isLoading: boolean
   error: string | null
   onPlaylistUrlChange: (value: string) => void
   onFetchPlaylist: (event: FormEvent<HTMLFormElement>) => Promise<void>
-  onUseVideoUrl: (videoUrl: string) => void
+  onQuickDownloadVideo: (videoUrl: string) => void
+  onDownloadPlaylist: (videos: QueueVideo[]) => void
+  onRemoveVideo: (videoId: string) => void
+  onLoadLongPlaylistAll: () => void
+  onLoadLongPlaylistFirst100: () => void
+  isBatchDownloading: boolean
 }
 
 function PlaylistPanel({
   playlistUrl,
   playlistTitle,
-  entries,
+  videos,
+  pendingLongPlaylist,
   isLoading,
   error,
   onPlaylistUrlChange,
   onFetchPlaylist,
-  onUseVideoUrl
+  onQuickDownloadVideo,
+  onDownloadPlaylist,
+  onRemoveVideo,
+  onLoadLongPlaylistAll,
+  onLoadLongPlaylistFirst100,
+  isBatchDownloading
 }: PlaylistPanelProps): JSX.Element {
-  const hasEntries = entries.length > 0
+  const hasVideos = videos.length > 0
 
   return (
     <div className="playlist-panel">
@@ -47,7 +60,7 @@ function PlaylistPanel({
         <button
           className="primary-button"
           type="submit"
-          disabled={isLoading || !playlistUrl.trim()}
+          disabled={isLoading || isBatchDownloading || !playlistUrl.trim()}
         >
           {isLoading ? 'Obteniendo lista...' : 'Obtener lista'}
         </button>
@@ -57,34 +70,50 @@ function PlaylistPanel({
         <p className="playlist-panel__error">{error}</p>
       )}
 
-      {hasEntries && (
+      {pendingLongPlaylist && (
+        <div className="playlist-panel__warning" role="alert">
+          <p className="playlist-panel__warning-title">La lista es demasiado larga.</p>
+          <p className="playlist-panel__warning-copy">
+            Puede causar inestabilidades en la app. Esta playlist tiene{' '}
+            {pendingLongPlaylist.entries.length} videos.
+          </p>
+          <div className="playlist-panel__warning-actions">
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={isBatchDownloading}
+              onClick={onLoadLongPlaylistAll}
+            >
+              Cargar de todas formas
+            </button>
+            <button
+              className="primary-button"
+              type="button"
+              disabled={isBatchDownloading}
+              onClick={onLoadLongPlaylistFirst100}
+            >
+              Cargar solo los 100 primeros
+            </button>
+          </div>
+        </div>
+      )}
+
+      {hasVideos && (
         <div className="playlist-panel__results">
           <div className="playlist-panel__results-header">
             <p className="playlist-panel__results-title">{playlistTitle}</p>
-            <span className="playlist-panel__count">{entries.length} videos</span>
+            <span className="playlist-panel__count">{videos.length} videos</span>
           </div>
-
-          <ol className="playlist-panel__list">
-            {entries.map((entry) => (
-              <li className="playlist-panel__item" key={entry.id}>
-                <div className="playlist-panel__item-info">
-                  <span className="playlist-panel__item-title">{entry.title}</span>
-                  {entry.duration != null && (
-                    <span className="playlist-panel__item-duration">
-                      {formatDuration(entry.duration)}
-                    </span>
-                  )}
-                </div>
-                <button
-                  className="playlist-panel__use-button"
-                  type="button"
-                  onClick={() => onUseVideoUrl(entry.url)}
-                >
-                  Usar
-                </button>
-              </li>
-            ))}
-          </ol>
+          <Cola
+            title="Cola de playlist"
+            emptyMessage="Quita videos o carga una playlist para llenar la cola."
+            videos={videos}
+            isDisabled={isBatchDownloading}
+            downloadLabel="Descargar playlist"
+            onDownloadAll={onDownloadPlaylist}
+            onQuickDownloadVideo={onQuickDownloadVideo}
+            onRemoveVideo={onRemoveVideo}
+          />
         </div>
       )}
     </div>

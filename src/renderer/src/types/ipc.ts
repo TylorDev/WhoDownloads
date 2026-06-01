@@ -1,19 +1,23 @@
 import type {
   DownloadFormat,
   DownloadInput,
+  DownloadQuality,
   DownloadProgress as MainDownloadProgress,
   DownloadResult,
+  DownloadTask,
+  DownloadTaskStatus,
   MetadataResult,
   Mp3Quality,
   Mp4Quality,
+  AppSettings,
   PlaylistEntry,
   PlaylistResult,
+  SelectDirectoryResult,
+  SettingsResult,
   YouTubeVideoClickedEvent
 } from '../../../shared/downloadTypes'
 
 export type DownloadProgress = MainDownloadProgress | { status: 'idle'; message?: string }
-
-export type DownloadQuality = Mp4Quality | Mp3Quality
 
 export type WebviewIpcMessageEvent = Event & {
   channel: string
@@ -38,6 +42,10 @@ declare global {
       openYouTubeBrowser: () => Promise<void>
       closeYouTubeBrowser: () => Promise<void>
       fetchPlaylist: (url: string) => Promise<PlaylistResult>
+      getSettings: () => Promise<SettingsResult>
+      saveSettings: (settings: AppSettings) => Promise<SettingsResult>
+      selectDownloadDirectory: () => Promise<SelectDirectoryResult>
+      showItemInFolder: (filePath: string) => Promise<void>
       onYouTubeVideoClicked: (callback: (event: YouTubeVideoClickedEvent) => void) => () => void
       onDownloadProgress: (callback: (progress: Omit<DownloadProgress, 'status'> & {
         status: Exclude<DownloadProgress['status'], 'idle'>
@@ -49,11 +57,17 @@ declare global {
 export type {
   DownloadFormat,
   DownloadInput,
+  DownloadQuality,
   DownloadResult,
+  DownloadTask,
+  DownloadTaskStatus,
   MetadataResult,
   Mp3Quality,
   Mp4Quality,
+  AppSettings,
   PlaylistEntry,
   PlaylistResult,
+  SelectDirectoryResult,
+  SettingsResult,
   YouTubeVideoClickedEvent
 }

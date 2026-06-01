@@ -1,17 +1,28 @@
 import type { App, WebContents } from 'electron'
 import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { DownloadInput, DownloadProgress, DownloadResult, MetadataResult } from '../../shared/downloadTypes'
+import type {
+  AppSettings,
+  DownloadInput,
+  DownloadProgress,
+  DownloadResult,
+  MetadataResult
+} from '../../shared/downloadTypes'
 import { getYtDlpArgs } from './formatSelectors'
 import { fetchVideoMetadata } from './metadataService'
 import { runYtDlpDownload } from './ytdlpService'
 import { getDownloadOutputDirectory, getWindowsBinaryPath } from '../utils/paths'
 import { isYouTubeUrl } from '../utils/validation'
 
-let activeDownload = false
+const MAX_PARALLEL_DOWNLOADS = 4
+let activeDownloads = 0
 
 function emitProgress(sender: WebContents, progress: DownloadProgress): void {
   sender.send('download-progress', progress)
+}
+
+function withTaskId(input: DownloadInput, progress: DownloadProgress): DownloadProgress {
+  return input.taskId ? { ...progress, taskId: input.taskId } : progress
 }
 
 function getDownloadFailureMessage(input: DownloadInput, stderr: string, fallbackError?: string): string {
@@ -43,7 +54,8 @@ export async function previewVideo(app: App, url: string): Promise<MetadataResul
 export async function downloadVideo(
   app: App,
   input: DownloadInput,
-  sender: WebContents
+  sender: WebContents,
+  settings?: AppSettings
 ): Promise<DownloadResult> {
   const cleanUrl = input.url.trim()
 
@@ -55,15 +67,15 @@ export async function downloadVideo(
     return { ok: false, error: 'La URL debe ser de youtube.com o youtu.be.' }
   }
 
-  if (activeDownload) {
-    return { ok: false, error: 'Ya hay una descarga activa. Espera a que termine.' }
+  if (activeDownloads >= MAX_PARALLEL_DOWNLOADS) {
+    return { ok: false, error: 'Ya hay 4 descargas activas. Espera a que termine una.' }
   }
 
-  activeDownload = true
-  emitProgress(sender, { status: 'starting', message: 'Preparando descarga...' })
+  activeDownloads += 1
+  emitProgress(sender, withTaskId(input, { status: 'starting', message: 'Preparando descarga...' }))
 
   try {
-    const outputDirectory = getDownloadOutputDirectory(app)
+    const outputDirectory = settings?.downloadDirectory || getDownloadOutputDirectory(app)
     await mkdir(outputDirectory, { recursive: true })
 
     const ytDlpPath = getWindowsBinaryPath(app, 'yt-dlp')
@@ -71,24 +83,27 @@ export async function downloadVideo(
     const outputTemplate = join(outputDirectory, '%(title).180B [%(id)s].%(ext)s')
     const args = getYtDlpArgs(input, ffmpegPath, outputTemplate)
     const result = await runYtDlpDownload(ytDlpPath, args, input.format, (progress) => {
-      emitProgress(sender, progress)
+      emitProgress(sender, withTaskId(input, progress))
     })
 
     if (result.ok) {
-      emitProgress(sender, {
-        status: 'completed',
-        percent: 100,
-        message: result.filePath ? `Descargado: ${result.filePath}` : 'Descarga completada.'
-      })
+      emitProgress(
+        sender,
+        withTaskId(input, {
+          status: 'completed',
+          percent: 100,
+          message: result.filePath ? `Descargado: ${result.filePath}` : 'Descarga completada.'
+        })
+      )
 
       return { ok: true, filePath: result.filePath }
     }
 
     const message = getDownloadFailureMessage(input, result.stderr, result.error)
-    emitProgress(sender, { status: 'failed', message })
+    emitProgress(sender, withTaskId(input, { status: 'failed', message }))
 
     return { ok: false, error: message }
   } finally {
-    activeDownload = false
+    activeDownloads -= 1
   }
 }

@@ -1,9 +1,17 @@
-import { app, ipcMain } from 'electron'
+import { app, dialog, ipcMain, shell } from 'electron'
 import type { BrowserWindow } from 'electron'
 import { join } from 'node:path'
-import type { DownloadResult, MetadataResult, PlaylistResult } from '../shared/downloadTypes'
+import type {
+  DownloadResult,
+  MetadataResult,
+  PlaylistResult,
+  SelectDirectoryResult,
+  SettingsResult
+} from '../shared/downloadTypes'
 import { downloadVideo, previewVideo } from './services/downloadService'
+import { revealFileInFolder } from './services/fileRevealService'
 import { fetchPlaylistEntries } from './services/playlistService'
+import { loadSettings, saveSettings } from './services/settingsService'
 import { isDownloadInput } from './utils/validation'
 import { getWindowsBinaryPath } from './utils/paths'
 
@@ -29,7 +37,7 @@ export function registerIpcHandlers(_mainWindow: BrowserWindow): void {
       return { ok: false, error: 'Opciones de descarga inválidas.' } satisfies DownloadResult
     }
 
-    return downloadVideo(app, input, event.sender)
+    return loadSettings(app).then((settings) => downloadVideo(app, input, event.sender, settings))
   })
 
   ipcMain.handle('fetch-playlist', (_event, url: unknown) => {
@@ -43,6 +51,38 @@ export function registerIpcHandlers(_mainWindow: BrowserWindow): void {
   ipcMain.handle('get-youtube-webview-preload-path', () =>
     join(__dirname, '../preload/youtubeWebview.js')
   )
+  ipcMain.handle('get-settings', async () => {
+    try {
+      return { ok: true, settings: await loadSettings(app) } satisfies SettingsResult
+    } catch {
+      return { ok: false, error: 'No se pudieron cargar los settings.' } satisfies SettingsResult
+    }
+  })
+  ipcMain.handle('save-settings', async (_event, settings: unknown) => {
+    try {
+      return { ok: true, settings: await saveSettings(app, settings) } satisfies SettingsResult
+    } catch {
+      return { ok: false, error: 'No se pudieron guardar los settings.' } satisfies SettingsResult
+    }
+  })
+  ipcMain.handle('select-download-directory', async () => {
+    try {
+      const result = await dialog.showOpenDialog(_mainWindow, {
+        properties: ['openDirectory', 'createDirectory']
+      })
+
+      if (result.canceled || !result.filePaths[0]) {
+        return { ok: false, canceled: true } satisfies SelectDirectoryResult
+      }
+
+      return { ok: true, directory: result.filePaths[0] } satisfies SelectDirectoryResult
+    } catch {
+      return { ok: false, error: 'No se pudo abrir el selector de carpeta.' } satisfies SelectDirectoryResult
+    }
+  })
+  ipcMain.handle('show-item-in-folder', (_event, filePath: unknown) => {
+    revealFileInFolder(filePath, shell)
+  })
   ipcMain.handle('open-youtube-browser', () => undefined)
   ipcMain.handle('close-youtube-browser', () => undefined)
 }

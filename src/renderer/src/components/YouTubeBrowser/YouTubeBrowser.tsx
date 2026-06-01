@@ -6,14 +6,16 @@ interface YouTubeBrowserProps {
   youtubeWebviewPreloadPath: string
   clickedVideos: string[]
   youtubeWebviewRef: RefObject<YouTubeWebviewElement | null>
-  onClose: () => Promise<void>
+  onUseVideo: (videoUrl: string) => void
+  onQuickDownloadVideo: (videoUrl: string) => void
 }
 
 function YouTubeBrowser({
   youtubeWebviewPreloadPath,
   clickedVideos,
   youtubeWebviewRef,
-  onClose
+  onUseVideo,
+  onQuickDownloadVideo
 }: YouTubeBrowserProps): JSX.Element {
   return (
     <section className="youtube-browser">
@@ -37,13 +39,6 @@ function YouTubeBrowser({
             <h2 className="youtube-floating-list__title">Videos clickeados</h2>
           </div>
           <span className="youtube-floating-list__count">{clickedVideos.length}</span>
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={onClose}
-          >
-            Cerrar YouTube
-          </button>
         </div>
 
         {clickedVideos.length > 0 ? (
@@ -51,6 +46,14 @@ function YouTubeBrowser({
             {clickedVideos.map((videoUrl) => (
               <li className="youtube-floating-list__item" key={videoUrl}>
                 <span className="break-anywhere">{videoUrl}</span>
+                <div className="youtube-floating-list__actions">
+                  <button type="button" onClick={() => onUseVideo(videoUrl)}>
+                    Usar
+                  </button>
+                  <button type="button" onClick={() => onQuickDownloadVideo(videoUrl)}>
+                    Rapida
+                  </button>
+                </div>
               </li>
             ))}
           </ol>

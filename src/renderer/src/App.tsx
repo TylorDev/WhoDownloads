@@ -1,68 +1,65 @@
-import { useDownload } from './hooks/useDownload'
-import { usePlaylist } from './hooks/usePlaylist'
-import { useYouTubeBrowser } from './hooks/useYouTubeBrowser'
-import {
-  ClickedVideosList,
-  DownloadForm,
-  Hero,
-  MetadataCard,
-  PlaylistPanel,
-  StatusPanel,
-  YouTubeBrowser
-} from './components'
+import { AppHeader } from './components'
+import { DownloadProvider } from './contexts/DownloadContext'
+import { NavigationProvider, useNavigation } from './contexts/NavigationContext'
+import { PlaylistProvider } from './contexts/PlaylistContext'
+import { SettingsProvider } from './contexts/SettingsContext'
+import { UrlIntakeProvider } from './contexts/UrlIntakeContext'
+import { YouTubeProvider } from './contexts/YouTubeContext'
+import HomePage from './pages/HomePage'
+import DownloadsPage from './pages/DownloadsPage'
+import PlaylistPage from './pages/PlaylistPage'
+import SettingsPage from './pages/SettingsPage'
+import YouTubePage from './pages/YouTubePage'
 import './App.scss'
 
-function App(): JSX.Element {
-  const download = useDownload()
-  const playlist = usePlaylist(download.handleUrlChange)
-  const youtube = useYouTubeBrowser()
+function ActivePage(): JSX.Element {
+  const { activePage } = useNavigation()
 
+  if (activePage === 'playlist') {
+    return <PlaylistPage />
+  }
+
+  if (activePage === 'youtube') {
+    return <YouTubePage />
+  }
+
+  if (activePage === 'settings') {
+    return <SettingsPage />
+  }
+
+  if (activePage === 'downloads') {
+    return <DownloadsPage />
+  }
+
+  return <HomePage />
+}
+
+function AppContent(): JSX.Element {
   return (
-    <main className="app-shell">
-      {youtube.isYouTubeOpen && (
-        <YouTubeBrowser
-          youtubeWebviewPreloadPath={youtube.youtubeWebviewPreloadPath}
-          clickedVideos={youtube.clickedVideos}
-          youtubeWebviewRef={youtube.youtubeWebviewRef}
-          onClose={youtube.handleYouTubeBrowserToggle}
-        />
-      )}
+    <UrlIntakeProvider>
+      <main className="app-shell">
+        <AppHeader />
+        <div className="app-container">
+          <ActivePage />
+        </div>
+      </main>
+    </UrlIntakeProvider>
+  )
+}
 
-      <section className={youtube.isYouTubeOpen ? 'app-container app-container--hidden' : 'app-container'}>
-        <Hero />
-        <DownloadForm
-          url={download.url}
-          format={download.format}
-          quality={download.quality}
-          isDownloading={download.isDownloading}
-          isPreviewLoading={download.isPreviewLoading}
-          hasCurrentPreview={download.hasCurrentPreview}
-          canSubmit={download.canSubmit}
-          isYouTubeOpen={youtube.isYouTubeOpen}
-          onUrlChange={download.handleUrlChange}
-          onFormatChange={download.setFormat}
-          onQualityChange={download.setQuality}
-          onSubmit={download.handleSubmit}
-          onYouTubeToggle={youtube.handleYouTubeBrowserToggle}
-        />
-        <PlaylistPanel
-          playlistUrl={playlist.playlistUrl}
-          playlistTitle={playlist.playlistTitle}
-          entries={playlist.entries}
-          isLoading={playlist.isLoading}
-          error={playlist.error}
-          onPlaylistUrlChange={playlist.handlePlaylistUrlChange}
-          onFetchPlaylist={playlist.handleFetchPlaylist}
-          onUseVideoUrl={playlist.handleUseVideoUrl}
-        />
-        <ClickedVideosList
-          videos={youtube.clickedVideos}
-          isYouTubeOpen={youtube.isYouTubeOpen}
-        />
-        {download.metadata && <MetadataCard metadata={download.metadata} />}
-        <StatusPanel progress={download.progress} />
-      </section>
-    </main>
+function App(): JSX.Element {
+  return (
+    <NavigationProvider>
+      <SettingsProvider>
+        <DownloadProvider>
+          <PlaylistProvider>
+            <YouTubeProvider>
+              <AppContent />
+            </YouTubeProvider>
+          </PlaylistProvider>
+        </DownloadProvider>
+      </SettingsProvider>
+    </NavigationProvider>
   )
 }
 

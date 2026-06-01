@@ -5,6 +5,9 @@ import type {
   DownloadResult,
   MetadataResult,
   PlaylistResult,
+  SelectDirectoryResult,
+  SettingsResult,
+  AppSettings,
   YouTubeVideoClickedEvent
 } from '../shared/downloadTypes'
 
@@ -18,6 +21,13 @@ contextBridge.exposeInMainWorld('whoDownloads', {
   openYouTubeBrowser: (): Promise<void> => ipcRenderer.invoke('open-youtube-browser'),
   closeYouTubeBrowser: (): Promise<void> => ipcRenderer.invoke('close-youtube-browser'),
   fetchPlaylist: (url: string): Promise<PlaylistResult> => ipcRenderer.invoke('fetch-playlist', url),
+  getSettings: (): Promise<SettingsResult> => ipcRenderer.invoke('get-settings'),
+  saveSettings: (settings: AppSettings): Promise<SettingsResult> =>
+    ipcRenderer.invoke('save-settings', settings),
+  selectDownloadDirectory: (): Promise<SelectDirectoryResult> =>
+    ipcRenderer.invoke('select-download-directory'),
+  showItemInFolder: (filePath: string): Promise<void> =>
+    ipcRenderer.invoke('show-item-in-folder', filePath),
   onYouTubeVideoClicked: (callback: (event: YouTubeVideoClickedEvent) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, payload: YouTubeVideoClickedEvent): void => {
       callback(payload)

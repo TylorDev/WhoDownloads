@@ -92,6 +92,34 @@
     margin-top: 0.5rem;
   }
 
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+
+    button {
+      min-height: 1.8rem;
+      padding: 0 0.65rem;
+      border: 1px solid $color-border-strong;
+      border-radius: $radius-sm;
+      background: transparent;
+      color: $color-accent;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+
+      &:hover {
+        border-color: $color-accent;
+        background: rgba(34, 211, 238, 0.08);
+      }
+    }
+  }
+
   &__empty {
     margin: 0.875rem 0 0;
     color: $color-text-subtle;

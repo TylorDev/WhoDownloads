@@ -10,12 +10,13 @@ interface DownloadFormProps {
   isPreviewLoading: boolean
   hasCurrentPreview: boolean
   canSubmit: boolean
-  isYouTubeOpen: boolean
+  quickDownloadEnabled: boolean
+  quickDownloadConfigured: boolean
   onUrlChange: (value: string) => void
   onFormatChange: (format: DownloadFormat) => void
   onQualityChange: (quality: DownloadQuality) => void
+  onQuickDownloadChange: (enabled: boolean) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>
-  onYouTubeToggle: () => Promise<void>
 }
 
 function DownloadForm({
@@ -26,23 +27,19 @@ function DownloadForm({
   isPreviewLoading,
   hasCurrentPreview,
   canSubmit,
-  isYouTubeOpen,
+  quickDownloadEnabled,
+  quickDownloadConfigured,
   onUrlChange,
   onFormatChange,
   onQualityChange,
-  onSubmit,
-  onYouTubeToggle
+  onQuickDownloadChange,
+  onSubmit
 }: DownloadFormProps): JSX.Element {
   const isDisabled = isDownloading || isPreviewLoading
+  const isUrlInputDisabled = isDownloading
 
   return (
     <form className="download-form" onSubmit={onSubmit}>
-      <div className="browser-actions">
-        <button className="secondary-button" type="button" onClick={onYouTubeToggle}>
-          {isYouTubeOpen ? 'Cerrar YouTube' : 'Abrir YouTube'}
-        </button>
-      </div>
-
       <label className="field" htmlFor="youtube-url">
         <span className="field__label">URL de YouTube</span>
         <input
@@ -51,8 +48,25 @@ function DownloadForm({
           placeholder="https://www.youtube.com/watch?v=..."
           value={url}
           onChange={(event) => onUrlChange(event.target.value)}
-          disabled={isDisabled}
+          disabled={isUrlInputDisabled}
         />
+      </label>
+
+      <label className="toggle-row">
+        <input
+          type="checkbox"
+          checked={quickDownloadEnabled}
+          disabled={!quickDownloadConfigured || isDownloading}
+          onChange={(event) => onQuickDownloadChange(event.target.checked)}
+        />
+        <span>
+          Descarga rapida
+          <small>
+            {quickDownloadConfigured
+              ? 'Usa el formato y la calidad definidos en Settings, sin preview.'
+              : 'Configura carpeta, formato y calidad en Settings para habilitarla.'}
+          </small>
+        </span>
       </label>
 
       <div className="control-grid">
@@ -103,7 +117,9 @@ function DownloadForm({
           ? 'Cargando preview...'
           : isDownloading
             ? 'Descargando...'
-            : hasCurrentPreview
+            : quickDownloadEnabled
+              ? 'Descargar rapido'
+              : hasCurrentPreview
               ? `Descargar ${format.toUpperCase()}`
               : 'Ver preview'}
       </button>

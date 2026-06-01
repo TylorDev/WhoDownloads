@@ -101,6 +101,58 @@ describe('downloadVideo', () => {
     ])
   })
 
+  it('emits taskId with download progress when provided', async () => {
+    const sender = createSenderStub()
+    vi.mocked(runYtDlpDownload).mockImplementation(async (_path, _args, _format, onProgress) => {
+      onProgress({ status: 'downloading', percent: 50, message: '50%' })
+      return { ok: true, filePath: 'C:\\Downloads\\song.mp3' }
+    })
+
+    await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/abc', format: 'mp3', quality: '192', taskId: 'task-1' },
+      sender
+    )
+
+    expect(sender.sent).toContainEqual([
+      'download-progress',
+      { taskId: 'task-1', status: 'downloading', percent: 50, message: '50%' }
+    ])
+    expect(sender.sent.at(-1)).toEqual([
+      'download-progress',
+      {
+        taskId: 'task-1',
+        status: 'completed',
+        percent: 100,
+        message: 'Descargado: C:\\Downloads\\song.mp3'
+      }
+    ])
+  })
+
+  it('uses configured download directory when provided', async () => {
+    const sender = createSenderStub()
+    vi.mocked(runYtDlpDownload).mockResolvedValue({ ok: true, filePath: 'D:\\Videos\\song.mp4' })
+
+    await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/abc', format: 'mp4', quality: '720' },
+      sender,
+      {
+        downloadDirectory: 'D:\\Videos',
+        defaultFormat: 'mp4',
+        defaultQuality: '720',
+        quickDownloadConfigured: true
+      }
+    )
+
+    expect(runYtDlpDownload).toHaveBeenCalledWith(
+      'C:\\bin\\yt-dlp.exe',
+      expect.arrayContaining(['-o', 'D:\\Videos\\%(title).180B [%(id)s].%(ext)s']),
+      'mp4',
+      expect.any(Function)
+    )
+  })
+
   it('returns MP4 format errors with the compatibility message', async () => {
     const sender = createSenderStub()
     vi.mocked(runYtDlpDownload).mockResolvedValue({
@@ -136,31 +188,65 @@ describe('downloadVideo', () => {
     expect(result).toEqual({ ok: false, error: 'No se pudo extraer audio MP3 para esta URL.' })
   })
 
-  it('blocks simultaneous downloads', async () => {
-    const firstSender = createSenderStub()
-    const secondSender = createSenderStub()
-    let resolveFirst: (value: Awaited<ReturnType<typeof runYtDlpDownload>>) => void = () => undefined
+  it('allows four simultaneous downloads and rejects the fifth', async () => {
+    const senders = Array.from({ length: 5 }, () => createSenderStub())
+    const resolvers: Array<(value: Awaited<ReturnType<typeof runYtDlpDownload>>) => void> = []
     vi.mocked(runYtDlpDownload).mockImplementation(
       () =>
         new Promise((resolve) => {
-          resolveFirst = resolve
+          resolvers.push(resolve)
         })
     )
 
-    const first = downloadVideo(
-      createAppStub(),
-      { url: 'https://youtu.be/first', format: 'mp3', quality: 'auto' },
-      firstSender
+    const active = Array.from({ length: 4 }, (_, index) =>
+      downloadVideo(
+        createAppStub(),
+        { url: `https://youtu.be/video-${index}`, format: 'mp3', quality: 'auto' },
+        senders[index]
+      )
     )
-    const second = await downloadVideo(
+    const fifth = await downloadVideo(
       createAppStub(),
-      { url: 'https://youtu.be/second', format: 'mp3', quality: 'auto' },
-      secondSender
+      { url: 'https://youtu.be/fifth', format: 'mp3', quality: 'auto' },
+      senders[4]
     )
 
-    expect(second).toEqual({ ok: false, error: 'Ya hay una descarga activa. Espera a que termine.' })
+    expect(fifth).toEqual({
+      ok: false,
+      error: 'Ya hay 4 descargas activas. Espera a que termine una.'
+    })
 
-    resolveFirst({ ok: true, filePath: 'C:\\Downloads\\first.mp3' })
-    await first
+    resolvers.forEach((resolve, index) => {
+      resolve({ ok: true, filePath: `C:\\Downloads\\video-${index}.mp3` })
+    })
+    await Promise.all(active)
+  })
+
+  it('releases download slots after failure', async () => {
+    const sender = createSenderStub()
+    vi.mocked(runYtDlpDownload).mockResolvedValueOnce({
+      ok: false,
+      stderr: 'ERROR: failed',
+      error: 'failed'
+    })
+
+    await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/fail', format: 'mp3', quality: 'auto' },
+      sender
+    )
+
+    vi.mocked(runYtDlpDownload).mockResolvedValueOnce({
+      ok: true,
+      filePath: 'C:\\Downloads\\next.mp3'
+    })
+
+    await expect(
+      downloadVideo(
+        createAppStub(),
+        { url: 'https://youtu.be/next', format: 'mp3', quality: 'auto' },
+        sender
+      )
+    ).resolves.toEqual({ ok: true, filePath: 'C:\\Downloads\\next.mp3' })
   })
 })

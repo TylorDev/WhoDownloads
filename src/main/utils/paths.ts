@@ -14,3 +14,7 @@ export function getWindowsBinaryPath(app: App, binaryName: string): string {
 export function getDownloadOutputDirectory(app: App): string {
   return join(app.getPath('downloads'), 'WhoDownloads')
 }
+
+export function getSettingsFilePath(app: App): string {
+  return join(app.getPath('userData'), 'settings.json')
+}

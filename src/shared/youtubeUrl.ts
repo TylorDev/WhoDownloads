@@ -43,9 +43,22 @@ export function looksLikeYouTubePlaylistUrl(value: string): boolean {
       return false
     }
 
-    return Boolean(parsed.searchParams.get('list'))
+    return Boolean(parsed.searchParams.get('list')) || parsed.searchParams.get('radio') === '1'
   } catch {
     return false
   }
 }
 
+export type YouTubeUrlKind = 'video' | 'playlist'
+
+export function classifyYouTubeUrl(value: string): YouTubeUrlKind | null {
+  if (looksLikeYouTubePlaylistUrl(value)) {
+    return 'playlist'
+  }
+
+  if (normalizeYouTubeVideoUrl(value)) {
+    return 'video'
+  }
+
+  return null
+}

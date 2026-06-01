@@ -1,0 +1,61 @@
+@use "../../styles/variables" as *;
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 4rem;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid $color-border;
+  background: rgba(9, 9, 11, 0.92);
+  backdrop-filter: blur(14px);
+
+  &__brand {
+    color: $color-text;
+    font-size: 0.95rem;
+    font-weight: 800;
+  }
+
+  &__nav {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    overflow-x: auto;
+  }
+
+  &__link {
+    height: 2.25rem;
+    padding: 0 0.85rem;
+    border-radius: $radius-sm;
+    background: transparent;
+    color: $color-text-subtle;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+      background 160ms ease,
+      color 160ms ease;
+
+    &:hover,
+    &--active {
+      background: rgba(34, 211, 238, 0.1);
+      color: $color-accent-hover;
+    }
+  }
+}
+
+@media (max-width: $breakpoint-sm) {
+  .app-header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 0.9rem 1rem;
+
+    &__nav {
+      width: 100%;
+    }
+  }
+}
