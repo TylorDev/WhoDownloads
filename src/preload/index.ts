@@ -13,6 +13,12 @@ import type {
 
 contextBridge.exposeInMainWorld('whoDownloads', {
   version: '0.0.1',
+  windowControls: {
+    minimize: (): Promise<void> => ipcRenderer.invoke('window-minimize'),
+    toggleMaximize: (): Promise<boolean> => ipcRenderer.invoke('window-toggle-maximize'),
+    close: (): Promise<void> => ipcRenderer.invoke('window-close'),
+    isMaximized: (): Promise<boolean> => ipcRenderer.invoke('window-is-maximized')
+  },
   getYouTubeWebviewPreloadPath: (): Promise<string> =>
     ipcRenderer.invoke('get-youtube-webview-preload-path'),
   previewVideo: (url: string): Promise<MetadataResult> => ipcRenderer.invoke('preview-video', url),

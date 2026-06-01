@@ -7,55 +7,125 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.85rem;
   min-height: 4rem;
-  padding: 0 1.5rem;
+  padding: 0 0.5rem 0 1.25rem;
   border-bottom: 1px solid $color-border;
-  background: rgba(9, 9, 11, 0.92);
-  backdrop-filter: blur(14px);
+  background: rgba(5, 5, 5, 0.86);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-app-region: drag;
+  user-select: none;
 
   &__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: max-content;
     color: $color-text;
-    font-size: 0.95rem;
-    font-weight: 800;
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  &__mark {
+    display: inline-grid;
+    width: 1.85rem;
+    height: 1.85rem;
+    place-items: center;
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    background: $color-surface-control;
+    color: $color-text-muted;
+    font-size: 0.66rem;
+    font-weight: 900;
+    letter-spacing: 0.02em;
   }
 
   &__nav {
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    min-width: 0;
     overflow-x: auto;
+    -webkit-app-region: no-drag;
   }
 
   &__link {
-    height: 2.25rem;
-    padding: 0 0.85rem;
-    border-radius: $radius-sm;
+    height: 2rem;
+    padding: 0 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
     background: transparent;
     color: $color-text-subtle;
-    font-size: 0.82rem;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 520;
     cursor: pointer;
+    -webkit-app-region: no-drag;
     transition:
-      background 160ms ease,
-      color 160ms ease;
+      background $transition-fast,
+      border-color $transition-fast,
+      color $transition-fast;
 
-    &:hover,
+    &:hover {
+      border-color: $color-border;
+      background: $color-surface-muted;
+      color: $color-text;
+    }
+
     &--active {
-      background: rgba(34, 211, 238, 0.1);
-      color: $color-accent-hover;
+      border-color: $color-border-strong;
+      background: $color-accent;
+      color: $color-accent-contrast;
+    }
+  }
+
+  &__window-controls {
+    display: flex;
+    align-self: stretch;
+    margin-left: auto;
+    -webkit-app-region: no-drag;
+  }
+
+  &__window-button {
+    width: 2.85rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: $color-text-subtle;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    -webkit-app-region: no-drag;
+    transition:
+      background $transition-fast,
+      color $transition-fast;
+
+    &:hover {
+      background: $color-surface-muted;
+      color: $color-text;
+    }
+
+    &--close:hover {
+      background: $color-error;
+      color: #ffffff;
     }
   }
 }
 
 @media (max-width: $breakpoint-sm) {
   .app-header {
-    align-items: flex-start;
-    flex-direction: column;
-    padding: 0.9rem 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    min-height: 4.75rem;
+    padding: 0.65rem 0.5rem 0.65rem 1rem;
 
     &__nav {
-      width: 100%;
+      order: 3;
+      width: calc(100% - 0.5rem);
+    }
+
+    &__window-controls {
+      min-height: 2.4rem;
     }
   }
 }

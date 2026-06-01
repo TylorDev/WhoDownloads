@@ -1,5 +1,4 @@
-import { app, dialog, ipcMain, shell } from 'electron'
-import type { BrowserWindow } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { join } from 'node:path'
 import type {
   DownloadResult,
@@ -82,6 +81,30 @@ export function registerIpcHandlers(_mainWindow: BrowserWindow): void {
   })
   ipcMain.handle('show-item-in-folder', (_event, filePath: unknown) => {
     revealFileInFolder(filePath, shell)
+  })
+  ipcMain.handle('window-minimize', (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.minimize()
+  })
+  ipcMain.handle('window-toggle-maximize', (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender)
+
+    if (!window) {
+      return false
+    }
+
+    if (window.isMaximized()) {
+      window.unmaximize()
+      return false
+    }
+
+    window.maximize()
+    return true
+  })
+  ipcMain.handle('window-close', (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.close()
+  })
+  ipcMain.handle('window-is-maximized', (event) => {
+    return BrowserWindow.fromWebContents(event.sender)?.isMaximized() ?? false
   })
   ipcMain.handle('open-youtube-browser', () => undefined)
   ipcMain.handle('close-youtube-browser', () => undefined)

@@ -4,8 +4,9 @@
   margin-top: 1rem;
   border: 1px solid $color-border;
   border-radius: $radius-md;
-  background: $color-surface-muted;
-  padding: 1rem;
+  background: linear-gradient(180deg, $color-surface-raised, $color-surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  padding: 1.1rem;
 
   &__header {
     display: flex;
@@ -18,7 +19,8 @@
     margin: 0;
     color: $color-text;
     font-size: 1rem;
-    font-weight: 700;
+    font-weight: 640;
+    letter-spacing: -0.02em;
   }
 
   &__count {
@@ -28,7 +30,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: $color-border;
+    border: 1px solid $color-border;
+    background: $color-surface-control;
     color: $color-text-muted;
     font-size: 0.8125rem;
     font-weight: 700;
@@ -39,6 +42,7 @@
     min-height: 2.4rem;
     margin-top: 0.85rem;
     border-radius: $radius-sm;
+    border: 1px solid $color-accent;
     background: $color-accent;
     color: $color-accent-contrast;
     font-size: 0.82rem;
@@ -47,10 +51,12 @@
 
     &:hover:not(:disabled) {
       background: $color-accent-hover;
+      border-color: $color-accent-hover;
     }
 
     &:disabled {
       background: $color-border-strong;
+      border-color: $color-border-strong;
       color: $color-text-subtle;
       cursor: not-allowed;
     }
@@ -78,7 +84,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.75rem 0;
-  border-bottom: 1px solid rgba($color-border, 0.5);
+  border-bottom: 1px solid rgba($color-border, 0.72);
 
   &:last-child {
     border-bottom: 0;
@@ -127,21 +133,22 @@
       padding: 0;
       border: 1px solid $color-border-strong;
       border-radius: $radius-sm;
-      background: transparent;
-      color: $color-accent;
+      background: $color-surface-control;
+      color: $color-text-muted;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
 
       &:hover:not(:disabled) {
-        border-color: $color-accent;
-        background: rgba(34, 211, 238, 0.08);
+        border-color: $color-text-subtle;
+        background: $color-surface-raised;
+        color: $color-text;
       }
 
       &:focus-visible {
         outline: none;
-        border-color: $color-accent;
+        border-color: $color-text-subtle;
         box-shadow: $shadow-focus;
       }
 
@@ -158,7 +165,7 @@
         padding: 0.3rem 0.5rem;
         border: 1px solid $color-border-strong;
         border-radius: $radius-sm;
-        background: $color-surface-control;
+        background: $color-surface-raised;
         color: $color-text;
         font-size: 0.72rem;
         font-weight: 700;
@@ -184,7 +191,7 @@
 
         &:hover:not(:disabled) {
           border-color: $color-error;
-          background: rgba(248, 113, 113, 0.08);
+          background: rgba($color-error, 0.1);
         }
       }
     }

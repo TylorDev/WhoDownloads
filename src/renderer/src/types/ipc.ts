@@ -36,6 +36,12 @@ declare global {
   interface Window {
     whoDownloads: {
       version: string
+      windowControls: {
+        minimize: () => Promise<void>
+        toggleMaximize: () => Promise<boolean>
+        close: () => Promise<void>
+        isMaximized: () => Promise<boolean>
+      }
       getYouTubeWebviewPreloadPath: () => Promise<string>
       previewVideo: (url: string) => Promise<MetadataResult>
       downloadVideo: (input: DownloadInput) => Promise<DownloadResult>
