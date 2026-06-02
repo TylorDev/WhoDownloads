@@ -8,9 +8,7 @@ import type {
   SelectDirectoryResult,
   SettingsResult
 } from '../shared/downloadTypes'
-import { downloadVideo, previewVideo } from './services/downloadService'
 import { openDirectoryInShell, revealFileInFolder } from './services/fileRevealService'
-import { fetchPlaylistEntries } from './services/playlistService'
 import { loadSettings, saveSettings } from './services/settingsService'
 import { isDownloadInput } from './utils/validation'
 import { getWindowsBinaryPath } from './utils/paths'
@@ -24,27 +22,34 @@ export function registerIpcHandlers(_mainWindow: BrowserWindow): void {
 
   handlersRegistered = true
 
-  ipcMain.handle('preview-video', (_event, url: unknown) => {
+  ipcMain.handle('preview-video', async (_event, url: unknown) => {
     if (typeof url !== 'string') {
       return { ok: false, error: 'URL inválida.' } satisfies MetadataResult
     }
 
+    const { previewVideo } = await import('./services/downloadService')
     return previewVideo(app, url)
   })
 
-  ipcMain.handle('download-video', (event, input: unknown) => {
+  ipcMain.handle('download-video', async (event, input: unknown) => {
     if (!isDownloadInput(input)) {
       return { ok: false, error: 'Opciones de descarga inválidas.' } satisfies DownloadResult
     }
 
-    return loadSettings(app).then((settings) => downloadVideo(app, input, event.sender, settings))
+    const [{ downloadVideo }, settings] = await Promise.all([
+      import('./services/downloadService'),
+      loadSettings(app)
+    ])
+
+    return downloadVideo(app, input, event.sender, settings)
   })
 
-  ipcMain.handle('fetch-playlist', (_event, url: unknown) => {
+  ipcMain.handle('fetch-playlist', async (_event, url: unknown) => {
     if (typeof url !== 'string') {
       return { ok: false, error: 'URL inválida.' } satisfies PlaylistResult
     }
 
+    const { fetchPlaylistEntries } = await import('./services/playlistService')
     return fetchPlaylistEntries(getWindowsBinaryPath(app, 'yt-dlp'), url.trim())
   })
 
