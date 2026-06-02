@@ -16,13 +16,19 @@ export function getMp3AudioQuality(quality: Mp3Quality): string {
   return quality === 'auto' ? '0' : `${quality}K`
 }
 
-export function getYtDlpArgs(input: DownloadInput, ffmpegPath: string, outputTemplate: string): string[] {
+export function getYtDlpArgs(
+  input: DownloadInput,
+  ffmpegPath: string,
+  outputTemplate: string,
+  authArgs: string[] = []
+): string[] {
   const commonArgs = [
     '--no-playlist',
     '--newline',
     '--windows-filenames',
     '--ffmpeg-location',
-    ffmpegPath
+    ffmpegPath,
+    ...authArgs
   ]
 
   if (input.format === 'mp3') {

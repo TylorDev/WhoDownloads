@@ -3,6 +3,7 @@ import type { App, WebContents } from 'electron'
 import { downloadVideo, previewVideo } from './downloadService'
 import { runYtDlpDownload } from './ytdlpService'
 import { fetchVideoMetadata } from './metadataService'
+import { getYtDlpCookieArgs } from './youtubeCookies'
 
 vi.mock('node:fs/promises', () => ({
   mkdir: vi.fn(() => Promise.resolve())
@@ -11,6 +12,10 @@ vi.mock('node:fs/promises', () => ({
 vi.mock('../utils/paths', () => ({
   getDownloadOutputDirectory: vi.fn(() => 'C:\\Downloads\\WhoDownloads'),
   getWindowsBinaryPath: vi.fn((_app: App, binaryName: string) => `C:\\bin\\${binaryName}.exe`)
+}))
+
+vi.mock('./youtubeCookies', () => ({
+  getYtDlpCookieArgs: vi.fn(() => Promise.resolve([]))
 }))
 
 vi.mock('./metadataService', async (importOriginal) => {
@@ -44,6 +49,7 @@ function createSenderStub(): WebContents & { sent: Array<[string, unknown]> } {
 describe('previewVideo', () => {
   beforeEach(() => {
     vi.mocked(fetchVideoMetadata).mockReset()
+    vi.mocked(getYtDlpCookieArgs).mockResolvedValue([])
   })
 
   it('validates URL before calling yt-dlp metadata fetch', async () => {
@@ -68,13 +74,35 @@ describe('previewVideo', () => {
     const result = await previewVideo(createAppStub(), 'https://youtu.be/abc')
 
     expect(result.ok).toBe(true)
-    expect(fetchVideoMetadata).toHaveBeenCalledWith('C:\\bin\\yt-dlp.exe', 'https://youtu.be/abc')
+    expect(fetchVideoMetadata).toHaveBeenCalledWith('C:\\bin\\yt-dlp.exe', 'https://youtu.be/abc', [])
+  })
+
+  it('passes embedded YouTube cookies to metadata fetches', async () => {
+    vi.mocked(getYtDlpCookieArgs).mockResolvedValue(['--cookies', 'C:\\UserData\\cookies.txt'])
+    vi.mocked(fetchVideoMetadata).mockResolvedValue({
+      ok: true,
+      metadata: {
+        title: 'Title',
+        artist: 'Channel',
+        year: '2024',
+        authorUrl: 'https://youtu.be/abc',
+        url: 'https://youtu.be/abc'
+      }
+    })
+
+    await previewVideo(createAppStub(), 'https://youtu.be/abc')
+
+    expect(fetchVideoMetadata).toHaveBeenCalledWith('C:\\bin\\yt-dlp.exe', 'https://youtu.be/abc', [
+      '--cookies',
+      'C:\\UserData\\cookies.txt'
+    ])
   })
 })
 
 describe('downloadVideo', () => {
   beforeEach(() => {
     vi.mocked(runYtDlpDownload).mockReset()
+    vi.mocked(getYtDlpCookieArgs).mockResolvedValue([])
   })
 
   it('emits starting and completed progress for successful downloads', async () => {
@@ -155,6 +183,25 @@ describe('downloadVideo', () => {
     )
   })
 
+  it('passes embedded YouTube cookies to yt-dlp downloads', async () => {
+    const sender = createSenderStub()
+    vi.mocked(getYtDlpCookieArgs).mockResolvedValue(['--cookies', 'C:\\UserData\\cookies.txt'])
+    vi.mocked(runYtDlpDownload).mockResolvedValue({ ok: true, filePath: 'D:\\Videos\\song.mp4' })
+
+    await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/abc', format: 'mp4', quality: '720' },
+      sender
+    )
+
+    expect(runYtDlpDownload).toHaveBeenCalledWith(
+      'C:\\bin\\yt-dlp.exe',
+      expect.arrayContaining(['--cookies', 'C:\\UserData\\cookies.txt']),
+      'mp4',
+      expect.any(Function)
+    )
+  })
+
   it('returns MP4 format errors with the compatibility message', async () => {
     const sender = createSenderStub()
     vi.mocked(runYtDlpDownload).mockResolvedValue({
@@ -190,6 +237,27 @@ describe('downloadVideo', () => {
     expect(result).toEqual({ ok: false, error: 'No se pudo extraer audio MP3 para esta URL.' })
   })
 
+  it('returns a session guidance message for YouTube anti-bot errors', async () => {
+    const sender = createSenderStub()
+    vi.mocked(runYtDlpDownload).mockResolvedValue({
+      ok: false,
+      stderr: "ERROR: [youtube] abc: Sign in to confirm you're not a bot.",
+      error: "ERROR: [youtube] abc: Sign in to confirm you're not a bot."
+    })
+
+    const result = await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/abc', format: 'mp4', quality: 'auto' },
+      sender
+    )
+
+    expect(result).toEqual({
+      ok: false,
+      error:
+        'YouTube pide verificar la sesion. Abre YouTube dentro de la app, inicia sesion y vuelve a intentar.'
+    })
+  })
+
   it('allows four simultaneous downloads and rejects the fifth', async () => {
     const senders = Array.from({ length: 5 }, () => createSenderStub())
     const resolvers: Array<(value: Awaited<ReturnType<typeof runYtDlpDownload>>) => void> = []
@@ -207,6 +275,9 @@ describe('downloadVideo', () => {
         senders[index]
       )
     )
+    await Promise.resolve()
+    await Promise.resolve()
+
     const fifth = await downloadVideo(
       createAppStub(),
       { url: 'https://youtu.be/fifth', format: 'mp3', quality: 'auto' },

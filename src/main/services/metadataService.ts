@@ -38,11 +38,16 @@ export function mapMetadataPreview(rawJson: string, fallbackUrl: string): Metada
   }
 }
 
-export async function fetchVideoMetadata(ytDlpPath: string, cleanUrl: string): Promise<MetadataResult> {
+export async function fetchVideoMetadata(
+  ytDlpPath: string,
+  cleanUrl: string,
+  authArgs: string[] = []
+): Promise<MetadataResult> {
   const result = await runYtDlpForJson(ytDlpPath, [
     '--dump-single-json',
     '--skip-download',
     '--no-playlist',
+    ...authArgs,
     cleanUrl
   ])
 

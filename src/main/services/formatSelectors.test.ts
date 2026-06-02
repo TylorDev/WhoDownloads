@@ -63,4 +63,17 @@ describe('getYtDlpArgs', () => {
     expect(joined).toContain('meta_author')
     expect(joined).toContain('WOAR')
   })
+
+  it('includes auth args before the video URL', () => {
+    const args = getYtDlpArgs(
+      { url: 'https://youtu.be/private', format: 'mp4', quality: 'auto' },
+      'C:\\bin\\ffmpeg.exe',
+      'C:\\out\\%(title)s.%(ext)s',
+      ['--cookies', 'C:\\UserData\\cookies.txt']
+    )
+
+    expect(args).toContain('--cookies')
+    expect(args).toContain('C:\\UserData\\cookies.txt')
+    expect(args.at(-1)).toBe('https://youtu.be/private')
+  })
 })

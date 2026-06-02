@@ -47,12 +47,14 @@ export function mapPlaylistEntries(rawJson: string): PlaylistResult {
 
 export async function fetchPlaylistEntries(
   ytDlpPath: string,
-  playlistUrl: string
+  playlistUrl: string,
+  authArgs: string[] = []
 ): Promise<PlaylistResult> {
   const result = await runYtDlpForJson(ytDlpPath, [
     '--flat-playlist',
     '--dump-single-json',
     '--no-warnings',
+    ...authArgs,
     playlistUrl
   ])
 

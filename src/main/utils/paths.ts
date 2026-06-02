@@ -11,6 +11,14 @@ export function getWindowsBinaryPath(app: App, binaryName: string): string {
   return join(app.getAppPath(), 'resources', 'bin', 'win', executableName)
 }
 
+export function getAppIconPath(app: App): string {
+  if (app.isPackaged) {
+    return join(process.resourcesPath, 'icon.ico')
+  }
+
+  return join(app.getAppPath(), 'resources', 'icons', 'icon.ico')
+}
+
 export function getDownloadOutputDirectory(app: App): string {
   return join(app.getPath('downloads'), 'WhoDownloads')
 }

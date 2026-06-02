@@ -11,6 +11,7 @@ import type {
 import { getYtDlpArgs } from './formatSelectors'
 import { fetchVideoMetadata } from './metadataService'
 import { runYtDlpDownload } from './ytdlpService'
+import { getYtDlpCookieArgs } from './youtubeCookies'
 import { getDownloadOutputDirectory, getWindowsBinaryPath } from '../utils/paths'
 import { isYouTubeUrl } from '../utils/validation'
 
@@ -27,6 +28,11 @@ function withTaskId(input: DownloadInput, progress: DownloadProgress): DownloadP
 
 function getDownloadFailureMessage(input: DownloadInput, stderr: string, fallbackError?: string): string {
   const formatUnavailable = /Requested format is not available|No video formats found/i.test(stderr)
+  const needsSession = /sign in to confirm you.?re not a bot/i.test(stderr)
+
+  if (needsSession) {
+    return 'YouTube pide verificar la sesion. Abre YouTube dentro de la app, inicia sesion y vuelve a intentar.'
+  }
 
   if (input.format === 'mp3') {
     return formatUnavailable ? 'No se pudo extraer audio MP3 para esta URL.' : fallbackError ?? ''
@@ -48,7 +54,9 @@ export async function previewVideo(app: App, url: string): Promise<MetadataResul
     return { ok: false, error: 'La URL debe ser de youtube.com o youtu.be.' }
   }
 
-  return fetchVideoMetadata(getWindowsBinaryPath(app, 'yt-dlp'), cleanUrl)
+  const authArgs = await getYtDlpCookieArgs(app)
+
+  return fetchVideoMetadata(getWindowsBinaryPath(app, 'yt-dlp'), cleanUrl, authArgs)
 }
 
 export async function downloadVideo(
@@ -81,7 +89,8 @@ export async function downloadVideo(
     const ytDlpPath = getWindowsBinaryPath(app, 'yt-dlp')
     const ffmpegPath = getWindowsBinaryPath(app, 'ffmpeg')
     const outputTemplate = join(outputDirectory, '%(title).180B.%(ext)s')
-    const args = getYtDlpArgs(input, ffmpegPath, outputTemplate)
+    const authArgs = await getYtDlpCookieArgs(app)
+    const args = getYtDlpArgs(input, ffmpegPath, outputTemplate, authArgs)
     const result = await runYtDlpDownload(ytDlpPath, args, input.format, (progress) => {
       emitProgress(sender, withTaskId(input, progress))
     })

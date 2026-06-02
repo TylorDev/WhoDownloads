@@ -6,6 +6,7 @@ import {
   takeFirstPlaylistEntries,
   type PendingLongPlaylist
 } from '../utils/playlistLimit'
+import { shouldClearPlaylistStateForUrl } from '../utils/downloadCompletion'
 
 interface PlaylistContextValue {
   playlistUrl: string
@@ -34,6 +35,14 @@ export function PlaylistProvider({ children }: { children: ReactNode }): JSX.Ele
 
   function setPlaylistUrl(value: string): void {
     setPlaylistUrlState(value)
+
+    if (shouldClearPlaylistStateForUrl(value)) {
+      setPlaylistTitle('')
+      setEntries([])
+      setPendingLongPlaylist(null)
+      setError(null)
+      return
+    }
 
     if (error) {
       setError(null)

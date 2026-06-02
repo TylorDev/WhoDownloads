@@ -32,6 +32,7 @@ import {
   createDownloadTask,
   createDownloadTaskId
 } from '../utils/downloadTasks'
+import { isBatchDownloadSuccessful, shouldClearDownloadInput } from '../utils/downloadCompletion'
 
 type BatchDownloadSource = 'playlist' | 'youtube'
 
@@ -58,7 +59,7 @@ interface DownloadContextValue {
     urls: string[],
     source: BatchDownloadSource,
     metadataByUrl?: Record<string, VideoMetadataPreview>
-  ) => Promise<void>
+  ) => Promise<boolean>
   showDownloadInFolder: (filePath: string) => Promise<void>
 }
 
@@ -188,18 +189,24 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     void updateQuality(nextQuality)
   }
 
-  async function startDownload(input: DownloadInput): Promise<void> {
+  function clearCurrentDownloadInput(): void {
+    setUrl('')
+    setMetadata(null)
+    setMetadataUrl('')
+  }
+
+  async function startDownload(input: DownloadInput): Promise<boolean> {
     if (isBatchDownloadingRef.current) {
       setProgress({
         status: 'failed',
         message: 'Hay una lista descargandose. Espera a que termine.'
       })
-      return
+      return false
     }
 
     if (isDownloadingRef.current) {
       setProgress({ status: 'failed', message: 'Ya hay una descarga activa. Espera a que termine.' })
-      return
+      return false
     }
 
     const taskInput = input.taskId ? input : { ...input, taskId: createDownloadTaskId() }
@@ -220,17 +227,21 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
       setIsDownloading(false)
       isDownloadingRef.current = false
       setProgress({ status: 'failed', message: result.error })
-      return
+      return false
     }
 
     setIsDownloading(false)
     isDownloadingRef.current = false
+    if (shouldClearDownloadInput(result)) {
+      clearCurrentDownloadInput()
+    }
     setProgress({
       status: 'completed',
       percent: 100,
       filePath: result.filePath,
       message: result.filePath ? `Descargado en ${result.filePath}` : 'Descarga completada.'
     })
+    return true
   }
 
   async function quickDownloadUrl(videoUrl: string): Promise<void> {
@@ -262,13 +273,13 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     urls: string[],
     source: BatchDownloadSource,
     metadataByUrl: Record<string, VideoMetadataPreview> = {}
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (isBatchDownloadingRef.current || isDownloadingRef.current) {
       setProgress({
         status: 'failed',
         message: 'Ya hay una descarga activa. Espera a que termine.'
       })
-      return
+      return false
     }
 
     if (!settings.quickDownloadConfigured) {
@@ -276,14 +287,14 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
         status: 'failed',
         message: 'Configura carpeta, formato y calidad en Settings antes de descargar listas.'
       })
-      return
+      return false
     }
 
     const uniqueUrls = dedupeUrls(urls)
 
     if (uniqueUrls.length === 0) {
       setProgress({ status: 'failed', message: 'No hay videos para descargar.' })
-      return
+      return false
     }
 
     const taskInputs = uniqueUrls.map((videoUrl) => ({
@@ -349,6 +360,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
             ? `Descarga de lista terminada con ${completed} completadas y ${failed} fallidas.`
             : `Descarga de lista completada: ${completed} videos.`
       })
+      return isBatchDownloadSuccessful(failed)
     } finally {
       setIsBatchDownloading(false)
       setIsDownloading(false)

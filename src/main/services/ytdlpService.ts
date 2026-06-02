@@ -12,8 +12,14 @@ export type YtDlpDownloadResult =
 
 function getSpawnErrorMessage(error: Error): string {
   return error.message.includes('ENOENT')
-    ? 'No se encontró resources/bin/win/yt-dlp.exe. Agrega el binario y vuelve a intentar.'
+    ? 'No se encontro resources/bin/win/yt-dlp.exe. Agrega el binario y vuelve a intentar.'
     : error.message
+}
+
+export function normalizeYtDlpErrorMessage(message: string): string {
+  return /sign in to confirm you.?re not a bot/i.test(message)
+    ? 'YouTube pide verificar la sesion. Abre YouTube dentro de la app, inicia sesion y vuelve a intentar.'
+    : message
 }
 
 export function runYtDlpForJson(ytDlpPath: string, args: string[]): Promise<YtDlpMetadataResult> {
@@ -49,9 +55,10 @@ export function runYtDlpForJson(ytDlpPath: string, args: string[]): Promise<YtDl
 
       resolve({
         ok: false,
-        error:
+        error: normalizeYtDlpErrorMessage(
           stderr.trim().split(/\r?\n/).at(-1) ??
-          `yt-dlp terminó con código ${code ?? 'desconocido'}.`
+            `yt-dlp termino con codigo ${code ?? 'desconocido'}.`
+        )
       })
     })
   })
@@ -106,9 +113,10 @@ export function runYtDlpDownload(
       resolve({
         ok: false,
         stderr,
-        error:
+        error: normalizeYtDlpErrorMessage(
           stderr.trim().split(/\r?\n/).at(-1) ??
-          `yt-dlp terminó con código ${code ?? 'desconocido'}.`
+            `yt-dlp termino con codigo ${code ?? 'desconocido'}.`
+        )
       })
     })
   })

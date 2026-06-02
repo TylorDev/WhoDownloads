@@ -42,11 +42,17 @@ function PlaylistPageContent(): JSX.Element {
       return metadata
     }, {})
 
-    void download.downloadUrls(
-      videos.map((video) => video.url),
-      'playlist',
-      metadataByUrl
-    )
+    void download
+      .downloadUrls(
+        videos.map((video) => video.url),
+        'playlist',
+        metadataByUrl
+      )
+      .then((completedSuccessfully) => {
+        if (completedSuccessfully) {
+          playlist.setPlaylistUrl('')
+        }
+      })
   }
 
   return (

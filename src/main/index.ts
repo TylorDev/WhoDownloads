@@ -2,6 +2,7 @@ import { app, BrowserWindow, Menu } from 'electron'
 import { join } from 'node:path'
 import { registerIpcHandlers } from './ipc'
 import { forwardConsoleErrorsToTerminal } from './utils/consoleForwarder'
+import { getAppIconPath } from './utils/paths'
 
 const WINDOW_BACKGROUND_COLOR = '#050505'
 const WINDOW_SHOW_FALLBACK_MS = 2500
@@ -38,7 +39,7 @@ function createWindow(): void {
     minWidth: 900,
     minHeight: 600,
     title: 'WhoDownloads',
-    icon: join(__dirname, '../../resources/bin/win/logo.svg'),
+    icon: getAppIconPath(app),
     show: false,
     backgroundColor: WINDOW_BACKGROUND_COLOR,
     frame: false,

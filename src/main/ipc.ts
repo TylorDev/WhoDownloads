@@ -10,6 +10,7 @@ import type {
 } from '../shared/downloadTypes'
 import { openDirectoryInShell, revealFileInFolder } from './services/fileRevealService'
 import { loadSettings, saveSettings } from './services/settingsService'
+import { getYtDlpCookieArgs } from './services/youtubeCookies'
 import { isDownloadInput } from './utils/validation'
 import { getWindowsBinaryPath } from './utils/paths'
 
@@ -50,7 +51,8 @@ export function registerIpcHandlers(_mainWindow: BrowserWindow): void {
     }
 
     const { fetchPlaylistEntries } = await import('./services/playlistService')
-    return fetchPlaylistEntries(getWindowsBinaryPath(app, 'yt-dlp'), url.trim())
+    const authArgs = await getYtDlpCookieArgs(app)
+    return fetchPlaylistEntries(getWindowsBinaryPath(app, 'yt-dlp'), url.trim(), authArgs)
   })
 
   ipcMain.handle('get-youtube-webview-preload-path', () =>
