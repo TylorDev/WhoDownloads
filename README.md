@@ -1,223 +1,231 @@
 # WhoDownloads
 
-WhoDownloads es una aplicacion de escritorio para Windows hecha con Electron. Sirve para descargar videos y playlists de YouTube en formato MP4 o MP3 desde una interfaz simple: pegas una URL, revisas la informacion del video y eliges donde guardar el archivo.
+<p align="center">
+  <img src="resources/bin/win/logo.svg" alt="WhoDownloads logo" width="220" />
+</p>
 
-Tambien incluye una vista de YouTube dentro de la app para navegar, detectar videos y agregarlos a una cola de descarga.
+<p align="center">
+  <img src="resources/icons/icon.ico" alt="WhoDownloads app icon" width="80" />
+</p>
 
-## Aviso de responsabilidad
+WhoDownloads is a Windows desktop app built with Electron. It helps you download YouTube videos and playlists as MP4 or MP3 from a simple interface: paste a URL, review the video information, choose the format and save the file.
 
-WhoDownloads es una herramienta para uso personal. Cada usuario es responsable de respetar los derechos de autor, los terminos de YouTube y las leyes aplicables al descargar o conservar contenido.
+It also includes an embedded YouTube view so you can browse inside the app, detect videos, and add them to a download queue.
 
-No necesitas iniciar sesion en YouTube para empezar a usar la app. Puedes pegar una URL publica y descargar normalmente cuando YouTube lo permite. En algunos casos, YouTube puede pedir verificar que no eres un bot; si eso ocurre, abre la vista YouTube dentro de WhoDownloads, inicia sesion y vuelve a intentar la descarga.
+## Responsibility Notice
 
-## Que puedes hacer
+WhoDownloads is intended for personal use. Each user is responsible for respecting copyright, YouTube's terms, and any laws that apply to downloaded or stored content.
 
-- Descargar videos de YouTube en MP4.
-- Descargar audio en MP3.
-- Descargar playlists completas o solo algunos videos.
-- Pegar, escribir o arrastrar URLs de YouTube.
-- Elegir carpeta de descarga, formato y calidad.
-- Activar descarga rapida cuando ya confirmaste tu configuracion.
-- Navegar YouTube dentro de la app y guardar videos detectados.
-- Ver el progreso de descargas activas, completadas o fallidas.
-- Abrir la carpeta donde se guardo un archivo descargado.
+You do not need to sign in to YouTube to start using the app. You can paste a public URL and download normally when YouTube allows it. In some cases, YouTube may ask you to verify that you are not a bot; if that happens, open the YouTube view inside WhoDownloads, sign in, and try the download again.
 
-Por defecto, las descargas se guardan en:
+## What You Can Do
+
+- Download YouTube videos as MP4.
+- Download audio as MP3.
+- Download full playlists or selected videos.
+- Paste, type, or drag YouTube URLs into the app.
+- Choose the download folder, format, and quality.
+- Enable quick download after confirming your settings.
+- Browse YouTube inside the app and save detected videos.
+- See active, completed, and failed download progress.
+- Open the folder where a downloaded file was saved.
+
+By default, downloads are saved in:
 
 ```text
 Downloads/WhoDownloads
 ```
 
-Puedes cambiar esa carpeta desde la app.
+You can change this folder from the app.
 
-## Instalacion en Windows
+## Windows Installation
 
-Si solo quieres usar la app, no necesitas instalar Node.js ni herramientas de desarrollo.
+If you only want to use the app, you do not need Node.js or development tools.
 
-1. Ve a la carpeta `dist`.
-2. Ejecuta el instalador:
+1. Go to the `dist` folder.
+2. Run the installer:
 
 ```text
 dist/WhoDownloads-Setup-0.0.1.exe
 ```
 
-3. Sigue los pasos del instalador.
-4. Abre WhoDownloads desde el acceso directo del escritorio o desde el menu de inicio.
+3. Follow the installer steps.
+4. Open WhoDownloads from the desktop shortcut or the Start menu.
 
-El instalador incluye los binarios necesarios para descargar y convertir videos:
+The installer includes the binaries needed to download and convert videos:
 
 ```text
 resources/bin/win/yt-dlp.exe
 resources/bin/win/ffmpeg.exe
 ```
 
-## Entorno de desarrollo
+## Development Setup
 
-Usa estos pasos si quieres clonar el proyecto, modificarlo o ejecutarlo desde codigo fuente.
+Use these steps if you want to clone the project, modify it, or run it from source.
 
-### Requisitos
+### Requirements
 
 - Windows.
-- Node.js instalado.
-- npm instalado.
-- Git instalado.
+- Node.js.
+- npm.
+- Git.
 
-### Clonar el proyecto
+### Clone The Project
 
 ```bash
 git clone https://github.com/TylorDev/WhoDownloads.git
 cd WhoDownloads
 ```
 
-### Instalar dependencias
+### Install Dependencies
 
 ```bash
 npm install
 ```
 
-### Revisar binarios locales
+### Check Local Binaries
 
-Durante desarrollo, la app busca estos archivos:
+During development, the app looks for these files:
 
 ```text
 resources/bin/win/yt-dlp.exe
 resources/bin/win/ffmpeg.exe
 ```
 
-Si faltan, las descargas no funcionaran. Agregalos en esa carpeta antes de probar descargas reales.
+If they are missing, downloads will not work. Add them to that folder before testing real downloads.
 
-### Ejecutar la app en desarrollo
+### Run The App In Development
 
 ```bash
 npm run dev
 ```
 
-Este comando abre la app Electron con Vite.
+This opens the Electron app with Vite.
 
-### Ejecutar en modo debug
+### Run In Debug Mode
 
 ```bash
 npm run dev:debug
 ```
 
-Este modo habilita el puerto de depuracion remota de Electron.
+This enables Electron's remote debugging port.
 
-## Comandos utiles
+## Useful Commands
 
-Ejecutar pruebas:
+Run tests:
 
 ```bash
 npm test
 ```
 
-Ejecutar pruebas en modo watch:
+Run tests in watch mode:
 
 ```bash
 npm run test:watch
 ```
 
-Compilar la app:
+Build the app:
 
 ```bash
 npm run build
 ```
 
-Crear una version Windows sin instalador:
+Create an unpacked Windows build:
 
 ```bash
 npm run pack:win
 ```
 
-Crear el instalador Windows:
+Create the Windows installer:
 
 ```bash
 npm run dist:win
 ```
 
-El instalador generado queda en la carpeta `dist`.
+The generated installer is written to the `dist` folder.
 
-## Como usar la app
+## How To Use The App
 
-### Descargar un video
+### Download A Video
 
-1. Abre WhoDownloads.
-2. Pega una URL de YouTube en Home.
-3. Espera la vista previa del video.
-4. Elige MP4 o MP3.
-5. Elige la calidad.
-6. Confirma la carpeta de descarga.
-7. Presiona el boton de descarga.
+1. Open WhoDownloads.
+2. Paste a YouTube URL on Home.
+3. Wait for the video preview.
+4. Choose MP4 or MP3.
+5. Choose the quality.
+6. Confirm the download folder.
+7. Press the download button.
 
-### Descargar rapido
+### Quick Download
 
-1. Abre Settings.
-2. Elige carpeta, formato y calidad.
-3. Confirma la configuracion.
-4. Vuelve a Home y activa descarga rapida.
-5. Pega una URL valida de YouTube.
+1. Open Settings.
+2. Choose the folder, format, and quality.
+3. Confirm the settings.
+4. Go back to Home and enable quick download.
+5. Paste a valid YouTube URL.
 
-Cuando cambias la carpeta, el formato o la calidad, la descarga rapida se desactiva hasta que confirmes la configuracion de nuevo.
+When you change the folder, format, or quality, quick download is disabled until you confirm the settings again.
 
-### Descargar una playlist
+### Download A Playlist
 
-1. Abre la vista Playlist.
-2. Pega una URL de playlist de YouTube.
-3. Carga la playlist.
-4. Quita los videos que no quieras descargar.
-5. Descarga un video individual o toda la lista.
+1. Open the Playlist view.
+2. Paste a YouTube playlist URL.
+3. Load the playlist.
+4. Remove any videos you do not want to download.
+5. Download one video or the full list.
 
-Si la playlist es muy larga, la app puede ofrecer cargar solo los primeros 100 videos o cargarla completa.
+If the playlist is very long, the app may offer to load only the first 100 videos or load the full playlist.
 
-### Usar YouTube dentro de la app
+### Use YouTube Inside The App
 
-1. Abre la vista YouTube.
-2. Navega dentro del navegador embebido.
-3. Cuando entres a videos, la app los agrega a una cola.
-4. Descarga un video desde la cola o descarga todos.
+1. Open the YouTube view.
+2. Browse inside the embedded browser.
+3. When you open videos, the app adds them to a queue.
+4. Download one video from the queue or download all of them.
 
-Puedes usar la app sin iniciar sesion. Si YouTube pide verificar que no eres un bot, inicia sesion en esta vista y vuelve a intentar la descarga.
+You can use the app without signing in. If YouTube asks you to verify that you are not a bot, sign in from this view and try the download again.
 
-## Problemas comunes
+## Common Issues
 
-### Falta `yt-dlp.exe`
+### Missing `yt-dlp.exe`
 
-Si ves un error como:
+If you see an error like:
 
 ```text
 No se encontro resources/bin/win/yt-dlp.exe
 ```
 
-agrega `yt-dlp.exe` en:
+add `yt-dlp.exe` to:
 
 ```text
 resources/bin/win
 ```
 
-### Falta `ffmpeg.exe`
+### Missing `ffmpeg.exe`
 
-Si la conversion a MP3 o MP4 falla, revisa que exista:
+If MP3 or MP4 conversion fails, check that this file exists:
 
 ```text
 resources/bin/win/ffmpeg.exe
 ```
 
-### YouTube pide verificar la sesion
+### YouTube Asks You To Verify Your Session
 
-No es necesario iniciar sesion desde el primer uso. Pero si aparece un mensaje de verificacion anti-bot, abre la vista YouTube dentro de WhoDownloads, inicia sesion y vuelve a intentar.
+You do not need to sign in from the first use. But if an anti-bot verification message appears, open the YouTube view inside WhoDownloads, sign in, and try again.
 
-La app guarda esa sesion en el navegador embebido y puede pasar esas cookies a `yt-dlp` para ayudar con la descarga.
+The app stores that session in the embedded browser and can pass those cookies to `yt-dlp` to help with the download.
 
-### No se guardan archivos
+### Files Are Not Saved
 
-Revisa que la carpeta de descarga exista y que Windows permita escribir en ella. Puedes cambiar la carpeta desde Home o Settings.
+Check that the download folder exists and that Windows allows writing to it. You can change the folder from Home or Settings.
 
-### Una playlist tarda mucho
+### A Playlist Takes Too Long
 
-Las playlists grandes pueden consumir mas red, CPU y disco. Si la app ofrece cargar solo los primeros 100 videos, usa esa opcion si no necesitas la lista completa.
+Large playlists can use more network, CPU, and disk resources. If the app offers to load only the first 100 videos, use that option when you do not need the full list.
 
-## Tecnologia
+## Technology
 
-WhoDownloads esta construido con:
+WhoDownloads is built with:
 
 - Electron.
 - React.
@@ -227,16 +235,16 @@ WhoDownloads esta construido con:
 - yt-dlp.
 - ffmpeg.
 
-La app mantiene el acceso nativo controlado mediante preload e IPC de Electron. El renderer no usa acceso directo a Node.js.
+The app keeps native access controlled through Electron preload and IPC. The renderer does not use direct Node.js access.
 
-## Estado actual
+## Current Status
 
-El proyecto esta enfocado principalmente en Windows. El empaquetado multiplataforma formal no esta definido todavia.
+The project is mainly focused on Windows. Formal multiplatform packaging is not defined yet.
 
-No incluye por ahora:
+Not included for now:
 
-- Cuentas de usuario propias.
-- Historial persistente de descargas entre sesiones.
-- Actualizaciones automaticas.
-- Scheduler de descargas.
-- Reintentos avanzados configurables.
+- App-owned user accounts.
+- Persistent download history between sessions.
+- Automatic updates.
+- Scheduled downloads.
+- Advanced configurable retries.
