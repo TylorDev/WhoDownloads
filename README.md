@@ -4,6 +4,12 @@ WhoDownloads es una aplicacion de escritorio para Windows hecha con Electron. Si
 
 Tambien incluye una vista de YouTube dentro de la app para navegar, detectar videos y agregarlos a una cola de descarga.
 
+## Aviso de responsabilidad
+
+WhoDownloads es una herramienta para uso personal. Cada usuario es responsable de respetar los derechos de autor, los terminos de YouTube y las leyes aplicables al descargar o conservar contenido.
+
+No necesitas iniciar sesion en YouTube para empezar a usar la app. Puedes pegar una URL publica y descargar normalmente cuando YouTube lo permite. En algunos casos, YouTube puede pedir verificar que no eres un bot; si eso ocurre, abre la vista YouTube dentro de WhoDownloads, inicia sesion y vuelve a intentar la descarga.
+
 ## Que puedes hacer
 
 - Descargar videos de YouTube en MP4.
@@ -169,7 +175,7 @@ Si la playlist es muy larga, la app puede ofrecer cargar solo los primeros 100 v
 3. Cuando entres a videos, la app los agrega a una cola.
 4. Descarga un video desde la cola o descarga todos.
 
-Si YouTube pide verificar sesion, abre YouTube dentro de la app, inicia sesion y vuelve a intentar la descarga.
+Puedes usar la app sin iniciar sesion. Si YouTube pide verificar que no eres un bot, inicia sesion en esta vista y vuelve a intentar la descarga.
 
 ## Problemas comunes
 
@@ -197,7 +203,9 @@ resources/bin/win/ffmpeg.exe
 
 ### YouTube pide verificar la sesion
 
-Abre la vista YouTube dentro de WhoDownloads, inicia sesion y vuelve a intentar. La app puede usar esa sesion para ayudar a `yt-dlp` cuando YouTube pide verificacion.
+No es necesario iniciar sesion desde el primer uso. Pero si aparece un mensaje de verificacion anti-bot, abre la vista YouTube dentro de WhoDownloads, inicia sesion y vuelve a intentar.
+
+La app guarda esa sesion en el navegador embebido y puede pasar esas cookies a `yt-dlp` para ayudar con la descarga.
 
 ### No se guardan archivos
 
