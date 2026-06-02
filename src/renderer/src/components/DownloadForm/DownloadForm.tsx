@@ -6,8 +6,10 @@ interface DownloadFormProps {
   url: string
   format: DownloadFormat
   quality: DownloadQuality
+  downloadDirectory: string
   isDownloading: boolean
   isPreviewLoading: boolean
+  isSettingsLoading: boolean
   hasCurrentPreview: boolean
   canSubmit: boolean
   quickDownloadEnabled: boolean
@@ -15,6 +17,7 @@ interface DownloadFormProps {
   onUrlChange: (value: string) => void
   onFormatChange: (format: DownloadFormat) => void
   onQualityChange: (quality: DownloadQuality) => void
+  onChooseDirectory: () => Promise<void>
   onQuickDownloadChange: (enabled: boolean) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>
 }
@@ -23,8 +26,10 @@ function DownloadForm({
   url,
   format,
   quality,
+  downloadDirectory,
   isDownloading,
   isPreviewLoading,
+  isSettingsLoading,
   hasCurrentPreview,
   canSubmit,
   quickDownloadEnabled,
@@ -32,12 +37,14 @@ function DownloadForm({
   onUrlChange,
   onFormatChange,
   onQualityChange,
+  onChooseDirectory,
   onQuickDownloadChange,
   onSubmit
 }: DownloadFormProps): JSX.Element {
   const isDisabled = isDownloading || isPreviewLoading
   const isUrlInputDisabled = isDownloading
   const isFormatControlDisabled = isDisabled || quickDownloadEnabled
+  const isDirectoryControlDisabled = isSettingsLoading || isDownloading || isPreviewLoading || quickDownloadEnabled
 
   return (
     <form className="download-form" onSubmit={onSubmit}>
@@ -64,8 +71,8 @@ function DownloadForm({
           Descarga rapida
           <small>
             {quickDownloadConfigured
-              ? 'Usa el formato y la calidad definidos en Settings, sin preview.'
-              : 'Configura carpeta, formato y calidad en Settings para habilitarla.'}
+              ? 'Usa la carpeta, formato y calidad compartidos, sin preview.'
+              : 'Configura carpeta, formato y calidad para habilitarla.'}
           </small>
         </span>
       </label>
@@ -112,6 +119,27 @@ function DownloadForm({
           </select>
         </label>
       </div>
+
+      <label className="field" htmlFor="home-download-directory">
+        <span className="field__label">Carpeta de descarga</span>
+        <div className="directory-control">
+          <input
+            id="home-download-directory"
+            className="form-control form-control--input"
+            value={downloadDirectory}
+            readOnly
+            disabled={isSettingsLoading}
+          />
+          <button
+            className="secondary-button"
+            type="button"
+            disabled={isDirectoryControlDisabled}
+            onClick={() => void onChooseDirectory()}
+          >
+            Elegir carpeta
+          </button>
+        </div>
+      </label>
 
       {!quickDownloadEnabled && (
         <button className="primary-button" type="submit" disabled={!canSubmit}>

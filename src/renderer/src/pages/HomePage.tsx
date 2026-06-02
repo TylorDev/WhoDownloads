@@ -8,7 +8,7 @@ import { useSettings } from '../contexts/SettingsContext'
 
 function HomePage(): JSX.Element {
   const download = useDownloadContext()
-  const { settings } = useSettings()
+  const { settings, isLoading: isSettingsLoading, chooseDirectory } = useSettings()
   const lastQuickDownloadUrlRef = useRef('')
 
   useEffect(() => {
@@ -56,8 +56,10 @@ function HomePage(): JSX.Element {
         url={download.url}
         format={download.format}
         quality={download.quality}
+        downloadDirectory={settings.downloadDirectory}
         isDownloading={download.isDownloading}
         isPreviewLoading={download.isPreviewLoading}
+        isSettingsLoading={isSettingsLoading}
         hasCurrentPreview={download.hasCurrentPreview}
         canSubmit={download.canSubmit}
         quickDownloadEnabled={download.quickDownloadEnabled}
@@ -65,6 +67,7 @@ function HomePage(): JSX.Element {
         onUrlChange={download.setVideoUrl}
         onFormatChange={download.setFormat}
         onQualityChange={download.setQuality}
+        onChooseDirectory={chooseDirectory}
         onQuickDownloadChange={download.setQuickDownloadEnabled}
         onSubmit={download.submitDownload}
       />

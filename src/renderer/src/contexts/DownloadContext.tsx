@@ -75,11 +75,9 @@ function buildInput(
 }
 
 export function DownloadProvider({ children }: { children: ReactNode }): JSX.Element {
-  const { settings } = useSettings()
+  const { settings, updateFormat, updateQuality } = useSettings()
   const { setActivePage } = useNavigation()
   const [url, setUrl] = useState('')
-  const [format, setFormat] = useState<DownloadFormat>('mp4')
-  const [quality, setQuality] = useState<DownloadQuality>('auto')
   const [quickDownloadEnabled, setQuickDownloadEnabled] = useState(false)
   const [metadata, setMetadata] = useState<VideoMetadataPreview | null>(null)
   const [metadataUrl, setMetadataUrl] = useState('')
@@ -95,16 +93,13 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
   const isBatchDownloadingRef = useRef(false)
 
   const cleanUrl = url.trim()
+  const format = settings.defaultFormat
+  const quality = settings.defaultQuality
   const hasCurrentPreview = Boolean(metadata && metadataUrl === cleanUrl)
   const canSubmit = useMemo(
     () => cleanUrl.length > 0 && !isDownloading && !isPreviewLoading && !isBatchDownloading,
     [cleanUrl, isDownloading, isPreviewLoading, isBatchDownloading]
   )
-
-  useEffect(() => {
-    setFormat(settings.defaultFormat)
-    setQuality(settings.defaultQuality)
-  }, [settings.defaultFormat, settings.defaultQuality])
 
   useEffect(() => {
     isDownloadingRef.current = isDownloading
@@ -186,8 +181,11 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
   }
 
   function handleFormatChange(nextFormat: DownloadFormat): void {
-    setFormat(nextFormat)
-    setQuality('auto')
+    void updateFormat(nextFormat)
+  }
+
+  function handleQualityChange(nextQuality: DownloadQuality): void {
+    void updateQuality(nextQuality)
   }
 
   async function startDownload(input: DownloadInput): Promise<void> {
@@ -418,7 +416,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
       hasCurrentPreview,
       canSubmit,
       setFormat: handleFormatChange,
-      setQuality,
+      setQuality: handleQualityChange,
       setQuickDownloadEnabled,
       setVideoUrl,
       submitDownload,
@@ -439,7 +437,11 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
       isPreviewLoading,
       hasCurrentPreview,
       canSubmit,
-      settings
+      format,
+      quality,
+      settings,
+      updateFormat,
+      updateQuality
     ]
   )
 
