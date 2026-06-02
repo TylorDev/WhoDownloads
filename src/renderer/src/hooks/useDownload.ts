@@ -123,6 +123,7 @@ export function useDownload(): UseDownloadReturn {
     setProgress({
       status: 'completed',
       percent: 100,
+      filePath: result.filePath,
       message: result.filePath ? `Descargado en ${result.filePath}` : 'Descarga completada.'
     })
   }

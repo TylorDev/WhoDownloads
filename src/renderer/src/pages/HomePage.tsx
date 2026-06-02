@@ -1,10 +1,50 @@
-import { DownloadForm, MetadataCard, StatusPanel } from '../components'
+import { useEffect, useRef } from 'react'
+import { normalizeYouTubeVideoUrl } from '../../../shared/youtubeUrl'
+import DownloadForm from '../components/DownloadForm/DownloadForm'
+import MetadataCard from '../components/MetadataCard/MetadataCard'
+import StatusPanel from '../components/StatusPanel/StatusPanel'
 import { useDownloadContext } from '../contexts/DownloadContext'
 import { useSettings } from '../contexts/SettingsContext'
 
 function HomePage(): JSX.Element {
   const download = useDownloadContext()
   const { settings } = useSettings()
+  const lastQuickDownloadUrlRef = useRef('')
+
+  useEffect(() => {
+    const videoUrl = normalizeYouTubeVideoUrl(download.url.trim())
+
+    if (!videoUrl || videoUrl !== lastQuickDownloadUrlRef.current) {
+      lastQuickDownloadUrlRef.current = ''
+    }
+
+    if (
+      !download.quickDownloadEnabled ||
+      !settings.quickDownloadConfigured ||
+      !videoUrl ||
+      lastQuickDownloadUrlRef.current === videoUrl ||
+      download.isDownloading ||
+      download.isBatchDownloading ||
+      download.isPreviewLoading
+    ) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      lastQuickDownloadUrlRef.current = videoUrl
+      void download.quickDownloadUrl(videoUrl)
+    }, 450)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [
+    download.url,
+    download.quickDownloadEnabled,
+    download.isDownloading,
+    download.isBatchDownloading,
+    download.isPreviewLoading,
+    download.quickDownloadUrl,
+    settings.quickDownloadConfigured
+  ])
 
   return (
     <section className="page-section">

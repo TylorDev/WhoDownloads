@@ -1,34 +1,61 @@
-import { AppHeader } from './components'
+import { lazy, Suspense } from 'react'
+import AppHeader from './components/AppHeader/AppHeader'
 import { DownloadProvider } from './contexts/DownloadContext'
 import { NavigationProvider, useNavigation } from './contexts/NavigationContext'
-import { PlaylistProvider } from './contexts/PlaylistContext'
 import { SettingsProvider } from './contexts/SettingsContext'
 import { UrlIntakeProvider } from './contexts/UrlIntakeContext'
-import { YouTubeProvider } from './contexts/YouTubeContext'
 import HomePage from './pages/HomePage'
-import DownloadsPage from './pages/DownloadsPage'
-import PlaylistPage from './pages/PlaylistPage'
-import SettingsPage from './pages/SettingsPage'
-import YouTubePage from './pages/YouTubePage'
 import './App.scss'
+
+const DownloadsPage = lazy(() => import('./pages/DownloadsPage'))
+const PlaylistPage = lazy(() => import('./pages/PlaylistPage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const YouTubePage = lazy(() => import('./pages/YouTubePage'))
+
+function PageFallback(): JSX.Element {
+  return (
+    <section className="page-section" aria-busy="true">
+      <div className="page-heading">
+        <p className="page-heading__eyebrow">Cargando</p>
+        <h1>Preparando vista</h1>
+      </div>
+    </section>
+  )
+}
 
 function ActivePage(): JSX.Element {
   const { activePage } = useNavigation()
 
   if (activePage === 'playlist') {
-    return <PlaylistPage />
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <PlaylistPage />
+      </Suspense>
+    )
   }
 
   if (activePage === 'youtube') {
-    return <YouTubePage />
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <YouTubePage />
+      </Suspense>
+    )
   }
 
   if (activePage === 'settings') {
-    return <SettingsPage />
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <SettingsPage />
+      </Suspense>
+    )
   }
 
   if (activePage === 'downloads') {
-    return <DownloadsPage />
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <DownloadsPage />
+      </Suspense>
+    )
   }
 
   return <HomePage />
@@ -56,11 +83,7 @@ function App(): JSX.Element {
     <NavigationProvider>
       <SettingsProvider>
         <DownloadProvider>
-          <PlaylistProvider>
-            <YouTubeProvider>
-              <AppContent />
-            </YouTubeProvider>
-          </PlaylistProvider>
+          <AppContent />
         </DownloadProvider>
       </SettingsProvider>
     </NavigationProvider>

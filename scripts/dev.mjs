@@ -2,6 +2,16 @@ import { spawn } from 'node:child_process'
 import { join } from 'node:path'
 
 const env = { ...process.env }
+const remoteDebuggingPortArg = process.argv.find((arg) =>
+  arg.startsWith('--remote-debugging-port=')
+)
+
+if (remoteDebuggingPortArg) {
+  env.ELECTRON_REMOTE_DEBUGGING_PORT = remoteDebuggingPortArg.split('=')[1] || '9222'
+} else {
+  env.ELECTRON_REMOTE_DEBUGGING_PORT ??= '9222'
+}
+
 const electronViteBin = join(
   process.cwd(),
   'node_modules',

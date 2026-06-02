@@ -1,17 +1,27 @@
 import { describe, expect, it } from 'vitest'
-import { getVideoLinkUrlFromContextMenuTarget } from './youtubeLinkExtractor'
+import {
+  getVideoLinkUrlFromContextMenuEvent,
+  getVideoLinkUrlFromContextMenuTarget
+} from './youtubeLinkExtractor'
 
 type MockNodeOptions = {
   href?: string
   attributes?: Record<string, string>
   closestNode?: EventTarget | null
+  queryNode?: EventTarget | null
 }
 
-function createMockNode({ href, attributes = {}, closestNode = null }: MockNodeOptions): EventTarget {
+function createMockNode({
+  href,
+  attributes = {},
+  closestNode = null,
+  queryNode = null
+}: MockNodeOptions): EventTarget {
   return {
     href,
     getAttribute: (name: string) => attributes[name] ?? null,
-    closest: () => closestNode
+    closest: () => closestNode,
+    querySelector: () => queryNode
   } as unknown as EventTarget
 }
 
@@ -40,6 +50,41 @@ describe('getVideoLinkUrlFromContextMenuTarget', () => {
 
     expect(getVideoLinkUrlFromContextMenuTarget(node)).toBe(
       'https://www.youtube.com/watch?v=E-LiWZBDdho'
+    )
+  })
+
+  it('extracts a video URL from a deep child inside a video container', () => {
+    const anchor = createMockNode({ href: '/watch?v=Tu72s5xLZ0Q' })
+    const container = createMockNode({ queryNode: anchor })
+    const child = createMockNode({ closestNode: container })
+
+    expect(getVideoLinkUrlFromContextMenuTarget(child)).toBe(
+      'https://www.youtube.com/watch?v=Tu72s5xLZ0Q'
+    )
+  })
+
+  it('builds a watch URL from data-context-item-id', () => {
+    const node = createMockNode({ attributes: { 'data-context-item-id': '9bZkp7q19f0' } })
+
+    expect(getVideoLinkUrlFromContextMenuTarget(node)).toBe(
+      'https://www.youtube.com/watch?v=9bZkp7q19f0'
+    )
+  })
+
+  it('uses the element under the click point when target and composedPath do not resolve', () => {
+    const pointTarget = createMockNode({ attributes: { 'data-video-id': 'aqz-KE-bpKQ' } })
+    const event = {
+      target: createMockNode({}),
+      clientX: 120,
+      clientY: 80,
+      composedPath: () => []
+    }
+    const documentLike = {
+      elementFromPoint: (x: number, y: number) => (x === 120 && y === 80 ? pointTarget : null)
+    }
+
+    expect(getVideoLinkUrlFromContextMenuEvent(event, documentLike)).toBe(
+      'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
     )
   })
 

@@ -9,6 +9,7 @@ import type {
   MetadataResult,
   Mp3Quality,
   Mp4Quality,
+  OpenDirectoryResult,
   AppSettings,
   PlaylistEntry,
   PlaylistResult,
@@ -52,6 +53,7 @@ declare global {
       saveSettings: (settings: AppSettings) => Promise<SettingsResult>
       selectDownloadDirectory: () => Promise<SelectDirectoryResult>
       showItemInFolder: (filePath: string) => Promise<void>
+      openDownloadDirectory: (directory: string) => Promise<OpenDirectoryResult>
       onYouTubeVideoClicked: (callback: (event: YouTubeVideoClickedEvent) => void) => () => void
       onDownloadProgress: (callback: (progress: Omit<DownloadProgress, 'status'> & {
         status: Exclude<DownloadProgress['status'], 'idle'>
@@ -70,6 +72,7 @@ export type {
   MetadataResult,
   Mp3Quality,
   Mp4Quality,
+  OpenDirectoryResult,
   AppSettings,
   PlaylistEntry,
   PlaylistResult,

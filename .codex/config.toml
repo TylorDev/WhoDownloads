@@ -1,0 +1,15 @@
+[mcp_servers.chrome-devtools]
+command = "cmd"
+args = [
+  "/c",
+  "npx",
+  "-y",
+  "chrome-devtools-mcp@latest",
+  "--browser-url=http://127.0.0.1:9222",
+  "--no-usage-statistics",
+]
+startup_timeout_sec = 20
+
+[mcp_servers.chrome-devtools.env]
+SystemRoot = "C:\\Windows"
+PROGRAMFILES = "C:\\Program Files"

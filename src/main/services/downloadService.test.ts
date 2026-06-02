@@ -95,6 +95,7 @@ describe('downloadVideo', () => {
         {
           status: 'completed',
           percent: 100,
+          filePath: 'C:\\Downloads\\song.mp3',
           message: 'Descargado: C:\\Downloads\\song.mp3'
         }
       ]
@@ -124,6 +125,7 @@ describe('downloadVideo', () => {
         taskId: 'task-1',
         status: 'completed',
         percent: 100,
+        filePath: 'C:\\Downloads\\song.mp3',
         message: 'Descargado: C:\\Downloads\\song.mp3'
       }
     ])

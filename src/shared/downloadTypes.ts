@@ -7,6 +7,7 @@ export type DownloadProgress = {
   speed?: string
   eta?: string
   message?: string
+  filePath?: string
 }
 
 export type DownloadResult =
@@ -82,4 +83,8 @@ export type SettingsResult =
 export type SelectDirectoryResult =
   | { ok: true; directory: string }
   | { ok: false; canceled: true }
+  | { ok: false; error: string }
+
+export type OpenDirectoryResult =
+  | { ok: true }
   | { ok: false; error: string }

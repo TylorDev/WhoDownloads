@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, type ReactNode } from 'react'
 import { classifyYouTubeUrl, normalizeYouTubeVideoUrl } from '../../../shared/youtubeUrl'
 import { useDownloadContext } from './DownloadContext'
 import { useNavigation } from './NavigationContext'
-import { usePlaylistContext } from './PlaylistContext'
 
 const UrlIntakeContext = createContext(true)
 const URL_PATTERN = /https?:\/\/[^\s"'<>]+/i
@@ -42,9 +41,8 @@ export function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 export function UrlIntakeProvider({ children }: { children: ReactNode }): JSX.Element {
-  const { setActivePage } = useNavigation()
+  const { setActivePage, openPlaylistUrl } = useNavigation()
   const { setVideoUrl, quickDownloadEnabled, quickDownloadUrl } = useDownloadContext()
-  const { loadPlaylistUrl } = usePlaylistContext()
 
   async function routeIncomingUrl(candidateUrl: string): Promise<void> {
     const urlKind = classifyYouTubeUrl(candidateUrl)
@@ -63,8 +61,7 @@ export function UrlIntakeProvider({ children }: { children: ReactNode }): JSX.El
     }
 
     if (urlKind === 'playlist') {
-      setActivePage('playlist')
-      await loadPlaylistUrl(candidateUrl)
+      openPlaylistUrl(candidateUrl)
     }
   }
 
@@ -130,7 +127,7 @@ export function UrlIntakeProvider({ children }: { children: ReactNode }): JSX.El
       document.removeEventListener('dragover', handleDragOver, true)
       document.removeEventListener('drop', handleDrop, true)
     }
-  }, [quickDownloadEnabled, setActivePage, setVideoUrl, quickDownloadUrl, loadPlaylistUrl])
+  }, [quickDownloadEnabled, setActivePage, setVideoUrl, quickDownloadUrl, openPlaylistUrl])
 
   return <UrlIntakeContext.Provider value>{children}</UrlIntakeContext.Provider>
 }

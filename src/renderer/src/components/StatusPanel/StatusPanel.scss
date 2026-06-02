@@ -11,14 +11,31 @@
   &__header {
     margin-bottom: 0.75rem;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
   }
 
+  &__title {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__hint {
+    color: $color-text-faint;
+    font-size: 0.75rem;
+    font-weight: 650;
+  }
+
   &__meta {
+    flex-shrink: 0;
     color: $color-text-subtle;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 760;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
   }
 
   &__message {
@@ -26,6 +43,42 @@
     color: $color-text-muted;
     font-size: 0.875rem;
     line-height: 1.6;
+  }
+
+  &__folder-button {
+    min-height: 2.35rem;
+    margin-top: 0.85rem;
+    padding: 0 0.75rem;
+    border: 1px solid $color-border-strong;
+    border-radius: $radius-sm;
+    background: $color-surface-control;
+    color: $color-text;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 760;
+    cursor: pointer;
+    transition:
+      background $transition-fast,
+      border-color $transition-fast,
+      color $transition-fast;
+
+    svg {
+      flex-shrink: 0;
+      color: $color-text-muted;
+    }
+
+    &:hover {
+      border-color: $color-text-subtle;
+      background: $color-surface-raised;
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: $shadow-focus;
+    }
   }
 
   &__version {
@@ -50,11 +103,30 @@
 }
 
 .progress-bar {
+  position: relative;
   height: 0.45rem;
   overflow: hidden;
   border-radius: 999px;
   border: 1px solid $color-border;
   background: $color-surface-control;
+
+  &--approximate {
+    background:
+      repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.045) 0,
+        rgba(255, 255, 255, 0.045) 0.35rem,
+        transparent 0.35rem,
+        transparent 0.7rem
+      ),
+      $color-surface-control;
+  }
+
+  &--indeterminate {
+    background:
+      linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.055), transparent),
+      $color-surface-control;
+  }
 
   &__fill {
     height: 100%;
@@ -62,12 +134,44 @@
     background: $color-accent;
     transition: width 260ms ease;
 
+    &--indeterminate {
+      position: absolute;
+      inset: 0 auto 0 -35%;
+      width: 34%;
+      min-width: 5rem;
+      background: linear-gradient(90deg, transparent, $color-accent, transparent);
+      animation: progress-sweep 1.25s ease-in-out infinite;
+    }
+
     &--error {
       background: $color-error;
     }
 
     &--success {
       background: $color-success;
+    }
+  }
+}
+
+@keyframes progress-sweep {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(390%);
+  }
+}
+
+@media (max-width: $breakpoint-sm) {
+  .status-panel {
+    &__header {
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    &__meta {
+      text-align: left;
     }
   }
 }

@@ -92,6 +92,7 @@ export async function downloadVideo(
         withTaskId(input, {
           status: 'completed',
           percent: 100,
+          filePath: result.filePath,
           message: result.filePath ? `Descargado: ${result.filePath}` : 'Descarga completada.'
         })
       )

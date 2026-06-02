@@ -19,9 +19,16 @@ import { useDownloadContext } from './DownloadContext'
 interface YouTubeContextValue {
   youtubeWebviewPreloadPath: string
   clickedVideos: string[]
+  lastValidClickNotice: YouTubeClickNotice | null
   youtubeWebviewRef: RefObject<YouTubeWebviewElement | null>
   ensureYouTubePreloadPath: () => Promise<void>
   removeClickedVideo: (url: string) => void
+}
+
+type YouTubeClickNotice = {
+  id: number
+  url: string
+  isDuplicate: boolean
 }
 
 const YouTubeContext = createContext<YouTubeContextValue | null>(null)
@@ -30,12 +37,19 @@ export function YouTubeProvider({ children }: { children: ReactNode }): JSX.Elem
   const { isBatchDownloading } = useDownloadContext()
   const [youtubeWebviewPreloadPath, setYouTubeWebviewPreloadPath] = useState('')
   const [clickedVideos, setClickedVideos] = useState<string[]>([])
+  const [lastValidClickNotice, setLastValidClickNotice] = useState<YouTubeClickNotice | null>(null)
   const youtubeWebviewRef = useRef<YouTubeWebviewElement | null>(null)
   const isBatchDownloadingRef = useRef(isBatchDownloading)
+  const clickedVideosRef = useRef(clickedVideos)
+  const validClickNoticeIdRef = useRef(0)
 
   useEffect(() => {
     isBatchDownloadingRef.current = isBatchDownloading
   }, [isBatchDownloading])
+
+  useEffect(() => {
+    clickedVideosRef.current = clickedVideos
+  }, [clickedVideos])
 
   useEffect(() => {
     return window.whoDownloads.onYouTubeVideoClicked(({ url: videoUrl }) => {
@@ -96,9 +110,21 @@ export function YouTubeProvider({ children }: { children: ReactNode }): JSX.Elem
       return
     }
 
-    setClickedVideos((currentVideos) =>
-      currentVideos.includes(videoUrl) ? currentVideos : [...currentVideos, videoUrl]
-    )
+    const currentVideos = clickedVideosRef.current
+    const isDuplicate = currentVideos.includes(videoUrl)
+
+    if (!isDuplicate) {
+      const nextVideos = [...currentVideos, videoUrl]
+      clickedVideosRef.current = nextVideos
+      setClickedVideos(nextVideos)
+    }
+
+    validClickNoticeIdRef.current += 1
+    setLastValidClickNotice({
+      id: validClickNoticeIdRef.current,
+      url: videoUrl,
+      isDuplicate
+    })
   }
 
   async function ensureYouTubePreloadPath(): Promise<void> {
@@ -111,18 +137,23 @@ export function YouTubeProvider({ children }: { children: ReactNode }): JSX.Elem
   }
 
   function removeClickedVideo(url: string): void {
-    setClickedVideos((currentVideos) => currentVideos.filter((videoUrl) => videoUrl !== url))
+    setClickedVideos((currentVideos) => {
+      const nextVideos = currentVideos.filter((videoUrl) => videoUrl !== url)
+      clickedVideosRef.current = nextVideos
+      return nextVideos
+    })
   }
 
   const value = useMemo(
     () => ({
       youtubeWebviewPreloadPath,
       clickedVideos,
+      lastValidClickNotice,
       youtubeWebviewRef,
       ensureYouTubePreloadPath,
       removeClickedVideo
     }),
-    [youtubeWebviewPreloadPath, clickedVideos]
+    [youtubeWebviewPreloadPath, clickedVideos, lastValidClickNotice]
   )
 
   return <YouTubeContext.Provider value={value}>{children}</YouTubeContext.Provider>

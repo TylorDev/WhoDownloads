@@ -1,16 +1,10 @@
 import { ipcRenderer } from 'electron'
-import { getVideoLinkUrlFromContextMenuTarget } from './youtubeLinkExtractor'
-
-function getVideoLinkUrl(target: EventTarget | null): string {
-  return getVideoLinkUrlFromContextMenuTarget(target)
-}
+import { getVideoLinkUrlFromContextMenuEvent } from './youtubeLinkExtractor'
 
 window.addEventListener(
   'contextmenu',
   (event) => {
-    const url =
-      getVideoLinkUrlFromContextMenuTarget(event.target, event.composedPath()) ||
-      getVideoLinkUrl(event.target)
+    const url = getVideoLinkUrlFromContextMenuEvent(event)
 
     if (url) {
       ipcRenderer.sendToHost('youtube-video-context-menu', { url })

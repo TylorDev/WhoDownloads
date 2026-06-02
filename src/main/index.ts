@@ -3,6 +3,16 @@ import { join } from 'node:path'
 import { registerIpcHandlers } from './ipc'
 import { forwardConsoleErrorsToTerminal } from './utils/consoleForwarder'
 
+function enableRemoteDebuggingForDevelopment(): void {
+  const remoteDebuggingPort = process.env['ELECTRON_REMOTE_DEBUGGING_PORT']
+
+  if (!process.env['ELECTRON_RENDERER_URL'] && !remoteDebuggingPort) {
+    return
+  }
+
+  app.commandLine.appendSwitch('remote-debugging-port', remoteDebuggingPort || '9222')
+}
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1100,
@@ -10,6 +20,7 @@ function createWindow(): void {
     minWidth: 900,
     minHeight: 600,
     title: 'WhoDownloads',
+    icon: join(__dirname, '../../resources/bin/win/logo.svg'),
     frame: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -31,6 +42,8 @@ function createWindow(): void {
   forwardConsoleErrorsToTerminal(mainWindow.webContents, 'renderer')
   registerIpcHandlers(mainWindow)
 }
+
+enableRemoteDebuggingForDevelopment()
 
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null)

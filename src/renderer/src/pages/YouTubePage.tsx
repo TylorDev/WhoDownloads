@@ -1,22 +1,41 @@
 import { useEffect, useState } from 'react'
 import { PanelRightClose, PanelRightOpen } from 'lucide-react'
-import { Cola, StatusPanel, YouTubeBrowser } from '../components'
+import Cola from '../components/Cola/Cola'
+import StatusPanel from '../components/StatusPanel/StatusPanel'
+import YouTubeBrowser from '../components/YouTubeBrowser/YouTubeBrowser'
 import { useDownloadContext } from '../contexts/DownloadContext'
 import { useNavigation } from '../contexts/NavigationContext'
-import { useYouTubeContext } from '../contexts/YouTubeContext'
+import { YouTubeProvider, useYouTubeContext } from '../contexts/YouTubeContext'
 import type { QueueVideo } from '../components/Cola/types'
 import { urlsToQueueVideos } from '../utils/queueVideos'
 import type { VideoMetadataPreview } from '../../../shared/downloadTypes'
 
-function YouTubePage(): JSX.Element {
+function YouTubePageContent(): JSX.Element {
   const youtube = useYouTubeContext()
   const download = useDownloadContext()
   const { setActivePage } = useNavigation()
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(true)
+  const [visibleNoticeId, setVisibleNoticeId] = useState<number | null>(null)
 
   useEffect(() => {
     void youtube.ensureYouTubePreloadPath()
   }, [])
+
+  useEffect(() => {
+    if (!youtube.lastValidClickNotice) {
+      return
+    }
+
+    setVisibleNoticeId(youtube.lastValidClickNotice.id)
+
+    const timeoutId = window.setTimeout(() => {
+      setVisibleNoticeId((currentNoticeId) =>
+        currentNoticeId === youtube.lastValidClickNotice?.id ? null : currentNoticeId
+      )
+    }, 2600)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [youtube.lastValidClickNotice])
 
   function useVideo(videoUrl: string): void {
     download.setVideoUrl(videoUrl)
@@ -29,6 +48,10 @@ function YouTubePage(): JSX.Element {
   }
 
   const queueVideos = urlsToQueueVideos(youtube.clickedVideos)
+  const visibleNotice =
+    youtube.lastValidClickNotice && visibleNoticeId === youtube.lastValidClickNotice.id
+      ? youtube.lastValidClickNotice
+      : null
 
   function downloadClickedVideos(videos: QueueVideo[]): void {
     const metadataByUrl = videos.reduce<Record<string, VideoMetadataPreview>>((metadata, video) => {
@@ -71,6 +94,22 @@ function YouTubePage(): JSX.Element {
           onUseVideo={useVideo}
           onQuickDownloadVideo={quickDownload}
         />
+        {visibleNotice ? (
+          <div
+            className={`youtube-click-toast ${
+              visibleNotice.isDuplicate ? 'youtube-click-toast--duplicate' : ''
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            <span className="youtube-click-toast__label">
+              {visibleNotice.isDuplicate
+                ? 'Este video ya estaba en la lista'
+                : 'Video agregado a la lista'}
+            </span>
+            <span className="youtube-click-toast__url">{visibleNotice.url}</span>
+          </div>
+        ) : null}
       </div>
       <div className="youtube-page__side" aria-hidden={!isSidePanelOpen}>
         <Cola
@@ -86,6 +125,14 @@ function YouTubePage(): JSX.Element {
         <StatusPanel progress={download.progress} />
       </div>
     </section>
+  )
+}
+
+function YouTubePage(): JSX.Element {
+  return (
+    <YouTubeProvider>
+      <YouTubePageContent />
+    </YouTubeProvider>
   )
 }
 

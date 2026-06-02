@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process'
 import type { DownloadFormat, DownloadProgress } from '../../shared/downloadTypes'
-import { extractPrintedFilePath, parseProgressLine } from '../utils/progressParser'
+import { extractPrintedFilePath, parseProgressLine, splitProgressLines } from '../utils/progressParser'
 
 export type YtDlpMetadataResult =
   | { ok: true; stdout: string }
@@ -76,7 +76,7 @@ export function runYtDlpDownload(
     child.stderr.setEncoding('utf8')
 
     child.stdout.on('data', (chunk: string) => {
-      for (const line of chunk.split(/\r?\n/)) {
+      for (const line of splitProgressLines(chunk)) {
         const printedPath = extractPrintedFilePath(line)
         if (printedPath) {
           filePath = printedPath

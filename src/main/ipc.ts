@@ -3,12 +3,13 @@ import { join } from 'node:path'
 import type {
   DownloadResult,
   MetadataResult,
+  OpenDirectoryResult,
   PlaylistResult,
   SelectDirectoryResult,
   SettingsResult
 } from '../shared/downloadTypes'
 import { downloadVideo, previewVideo } from './services/downloadService'
-import { revealFileInFolder } from './services/fileRevealService'
+import { openDirectoryInShell, revealFileInFolder } from './services/fileRevealService'
 import { fetchPlaylistEntries } from './services/playlistService'
 import { loadSettings, saveSettings } from './services/settingsService'
 import { isDownloadInput } from './utils/validation'
@@ -81,6 +82,17 @@ export function registerIpcHandlers(_mainWindow: BrowserWindow): void {
   })
   ipcMain.handle('show-item-in-folder', (_event, filePath: unknown) => {
     revealFileInFolder(filePath, shell)
+  })
+  ipcMain.handle('open-download-directory', async (_event, directory: unknown) => {
+    try {
+      const opened = await openDirectoryInShell(directory, shell)
+
+      return opened
+        ? ({ ok: true } satisfies OpenDirectoryResult)
+        : ({ ok: false, error: 'No se pudo abrir la carpeta de descargas.' } satisfies OpenDirectoryResult)
+    } catch {
+      return { ok: false, error: 'No se pudo abrir la carpeta de descargas.' } satisfies OpenDirectoryResult
+    }
   })
   ipcMain.handle('window-minimize', (event) => {
     BrowserWindow.fromWebContents(event.sender)?.minimize()

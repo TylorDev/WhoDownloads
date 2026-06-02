@@ -1,5 +1,9 @@
 import type { DownloadFormat, DownloadProgress } from '../../shared/downloadTypes'
 
+export function splitProgressLines(chunk: string): string[] {
+  return chunk.split(/\r?\n|\r/).filter((line) => line.trim().length > 0)
+}
+
 export function parseProgressLine(line: string, format: DownloadFormat): DownloadProgress | null {
   if (line.includes('[Merger]') || line.includes('[ExtractAudio]')) {
     return {

@@ -4,6 +4,7 @@ import type {
   DownloadProgress,
   DownloadResult,
   MetadataResult,
+  OpenDirectoryResult,
   PlaylistResult,
   SelectDirectoryResult,
   SettingsResult,
@@ -34,6 +35,8 @@ contextBridge.exposeInMainWorld('whoDownloads', {
     ipcRenderer.invoke('select-download-directory'),
   showItemInFolder: (filePath: string): Promise<void> =>
     ipcRenderer.invoke('show-item-in-folder', filePath),
+  openDownloadDirectory: (directory: string): Promise<OpenDirectoryResult> =>
+    ipcRenderer.invoke('open-download-directory', directory),
   onYouTubeVideoClicked: (callback: (event: YouTubeVideoClickedEvent) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, payload: YouTubeVideoClickedEvent): void => {
       callback(payload)

@@ -113,17 +113,17 @@ function DownloadForm({
         </label>
       </div>
 
-      <button className="primary-button" type="submit" disabled={!canSubmit}>
-        {isPreviewLoading
-          ? 'Cargando preview...'
-          : isDownloading
-            ? 'Descargando...'
-            : quickDownloadEnabled
-              ? 'Descargar rapido'
+      {!quickDownloadEnabled && (
+        <button className="primary-button" type="submit" disabled={!canSubmit}>
+          {isPreviewLoading
+            ? 'Cargando preview...'
+            : isDownloading
+              ? 'Descargando...'
               : hasCurrentPreview
-              ? `Descargar ${format.toUpperCase()}`
-              : 'Ver preview'}
-      </button>
+                ? `Descargar ${format.toUpperCase()}`
+                : 'Ver preview'}
+        </button>
+      )}
     </form>
   )
 }
