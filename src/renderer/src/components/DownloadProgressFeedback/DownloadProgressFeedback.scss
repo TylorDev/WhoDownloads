@@ -1,0 +1,290 @@
+@use "../../styles/variables" as *;
+
+.download-progress-feedback {
+  &__header {
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  &__title {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__hint {
+    color: $color-text-faint;
+    font-size: 0.75rem;
+    font-weight: 650;
+  }
+
+  &__step {
+    color: $color-text;
+    font-size: 1rem;
+    font-weight: 780;
+    line-height: 1.25;
+  }
+
+  &__meta {
+    flex-shrink: 0;
+    color: $color-text-subtle;
+    font-size: 0.8125rem;
+    font-weight: 760;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  &__message {
+    margin: 0.75rem 0 0;
+    color: $color-text-muted;
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  &--compact {
+    .download-progress-feedback__header {
+      margin-top: 0.9rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .download-progress-feedback__step {
+      font-size: 0.92rem;
+    }
+
+    .download-progress-feedback__message {
+      font-size: 0.8rem;
+    }
+
+    .status-steps {
+      grid-template-columns: repeat(auto-fit, minmax(4.8rem, 1fr));
+    }
+
+    .status-steps__item {
+      min-height: 2.85rem;
+    }
+  }
+}
+
+.status-label {
+  width: fit-content;
+  min-height: 1.45rem;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  background: $color-surface-control;
+  color: $color-text-muted;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 780;
+  line-height: 1;
+
+  &--error {
+    border-color: rgba($color-error, 0.38);
+    background: rgba($color-error, 0.1);
+    color: $color-error-soft;
+  }
+
+  &--success {
+    border-color: rgba($color-success, 0.38);
+    background: rgba($color-success, 0.1);
+    color: $color-success-soft;
+  }
+}
+
+.status-steps {
+  margin: 0 0 0.85rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5.4rem, 1fr));
+  gap: 0.45rem;
+  list-style: none;
+
+  &__item {
+    position: relative;
+    min-width: 0;
+    min-height: 3.15rem;
+    overflow: hidden;
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    background: rgba(255, 255, 255, 0.018);
+    color: $color-text-faint;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.35rem;
+    transition:
+      border-color $transition-fast,
+      background $transition-fast,
+      color $transition-fast;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      background: linear-gradient(110deg, transparent 18%, rgba(255, 255, 255, 0.12) 48%, transparent 76%);
+      transform: translateX(-110%);
+    }
+
+    &--done {
+      border-color: rgba($color-success, 0.24);
+      background: rgba($color-success, 0.07);
+      color: $color-success-soft;
+    }
+
+    &--active {
+      border-color: rgba(255, 255, 255, 0.38);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)),
+        $color-surface-control;
+      color: $color-text;
+
+      &::before {
+        opacity: 1;
+        animation: status-step-sweep 1.55s ease-in-out infinite;
+      }
+
+      .status-steps__icon {
+        animation: status-step-pulse 1.1s ease-in-out infinite;
+      }
+    }
+
+    &--error {
+      border-color: rgba($color-error, 0.42);
+      background: rgba($color-error, 0.08);
+      color: $color-error-soft;
+    }
+  }
+
+  &__icon {
+    position: relative;
+    z-index: 1;
+    width: 1.7rem;
+    height: 1.7rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__label {
+    position: relative;
+    z-index: 1;
+    max-width: 100%;
+    padding: 0 0.35rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: inherit;
+    font-size: 0.6875rem;
+    font-weight: 760;
+    line-height: 1.1;
+    text-align: center;
+    white-space: nowrap;
+  }
+}
+
+.progress-bar {
+  position: relative;
+  height: 0.45rem;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid $color-border;
+  background: $color-surface-control;
+
+  &--approximate {
+    background:
+      repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.045) 0,
+        rgba(255, 255, 255, 0.045) 0.35rem,
+        transparent 0.35rem,
+        transparent 0.7rem
+      ),
+      $color-surface-control;
+  }
+
+  &--indeterminate {
+    background:
+      linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.055), transparent),
+      $color-surface-control;
+  }
+
+  &__fill {
+    height: 100%;
+    border-radius: inherit;
+    background: $color-accent;
+    transition: width 260ms ease;
+
+    &--indeterminate {
+      position: absolute;
+      inset: 0 auto 0 -35%;
+      width: 34%;
+      min-width: 5rem;
+      background: linear-gradient(90deg, transparent, $color-accent, transparent);
+      animation: progress-sweep 1.25s ease-in-out infinite;
+    }
+
+    &--error {
+      background: $color-error;
+    }
+
+    &--success {
+      background: $color-success;
+    }
+  }
+}
+
+@keyframes progress-sweep {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(390%);
+  }
+}
+
+@keyframes status-step-sweep {
+  0% {
+    transform: translateX(-110%);
+  }
+
+  100% {
+    transform: translateX(110%);
+  }
+}
+
+@keyframes status-step-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+@media (max-width: $breakpoint-sm) {
+  .download-progress-feedback {
+    &__header {
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    &__meta {
+      text-align: left;
+    }
+  }
+
+  .status-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

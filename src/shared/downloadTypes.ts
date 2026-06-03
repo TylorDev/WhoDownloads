@@ -1,8 +1,17 @@
 export type DownloadStatus = 'starting' | 'downloading' | 'processing' | 'completed' | 'failed'
+export type DownloadStep =
+  | 'preparing'
+  | 'downloading-file'
+  | 'downloading-cover'
+  | 'converting'
+  | 'merging'
+  | 'completed'
+  | 'failed'
 
 export type DownloadProgress = {
   taskId?: string
   status: DownloadStatus
+  step?: DownloadStep
   percent?: number
   speed?: string
   eta?: string
@@ -45,6 +54,8 @@ export type DownloadTask = {
   format: DownloadFormat
   quality: DownloadQuality
   status: DownloadTaskStatus
+  step?: DownloadStep
+  stepHistory?: DownloadStep[]
   percent?: number
   speed?: string
   eta?: string

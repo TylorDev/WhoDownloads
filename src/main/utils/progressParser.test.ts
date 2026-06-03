@@ -5,6 +5,7 @@ describe('parseProgressLine', () => {
   it('parses percent, speed, and ETA from download output', () => {
     expect(parseProgressLine('[download]  42.5% of 10.00MiB at 1.23MiB/s ETA 00:04', 'mp4')).toEqual({
       status: 'downloading',
+      step: 'downloading-file',
       percent: 42.5,
       speed: '1.23MiB/s',
       eta: '00:04'
@@ -14,18 +15,42 @@ describe('parseProgressLine', () => {
   it('keeps download lines without percent as indeterminate progress messages', () => {
     expect(parseProgressLine('[download] Destination: video.mp4', 'mp4')).toEqual({
       status: 'downloading',
+      step: 'downloading-file',
       message: 'Destination: video.mp4'
     })
   })
 
-  it('reports processing messages by format', () => {
+  it('reports merge processing as the merging step', () => {
     expect(parseProgressLine('[Merger] Merging formats into file.mp4', 'mp4')).toEqual({
       status: 'processing',
-      message: 'Procesando MP4...'
+      step: 'merging',
+      message: 'Unificando archivo...'
     })
+  })
+
+  it('reports audio and video conversion as the converting step', () => {
     expect(parseProgressLine('[ExtractAudio] Destination: file.mp3', 'mp3')).toEqual({
       status: 'processing',
-      message: 'Procesando audio...'
+      step: 'converting',
+      message: 'Convirtiendo audio...'
+    })
+    expect(parseProgressLine('[VideoConvertor] Converting video from mp4 to mp4', 'mp4')).toEqual({
+      status: 'processing',
+      step: 'converting',
+      message: 'Convirtiendo MP4...'
+    })
+  })
+
+  it('reports thumbnail and cover work as the cover step', () => {
+    expect(parseProgressLine('[download] Downloading thumbnail 1 ...', 'mp3')).toEqual({
+      status: 'processing',
+      step: 'downloading-cover',
+      message: 'Descargando cover...'
+    })
+    expect(parseProgressLine('[ThumbnailsConvertor] Converting thumbnail "cover.webp" to jpg', 'mp3')).toEqual({
+      status: 'processing',
+      step: 'downloading-cover',
+      message: 'Descargando cover...'
     })
   })
 

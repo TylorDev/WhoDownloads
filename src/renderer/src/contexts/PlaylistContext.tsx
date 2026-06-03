@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { looksLikeYouTubePlaylistUrl } from '../../../shared/youtubeUrl'
 import type { PlaylistEntry } from '../types/ipc'
 import {
@@ -33,7 +33,7 @@ export function PlaylistProvider({ children }: { children: ReactNode }): JSX.Ele
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  function setPlaylistUrl(value: string): void {
+  const setPlaylistUrl = useCallback((value: string): void => {
     setPlaylistUrlState(value)
 
     if (shouldClearPlaylistStateForUrl(value)) {
@@ -49,9 +49,9 @@ export function PlaylistProvider({ children }: { children: ReactNode }): JSX.Ele
     }
 
     setPendingLongPlaylist(null)
-  }
+  }, [error])
 
-  async function loadPlaylistUrl(url: string): Promise<void> {
+  const loadPlaylistUrl = useCallback(async (url: string): Promise<void> => {
     const cleanUrl = url.trim()
     setPlaylistUrl(cleanUrl)
 
@@ -99,18 +99,18 @@ export function PlaylistProvider({ children }: { children: ReactNode }): JSX.Ele
 
     setPlaylistTitle(result.title)
     setEntries(result.entries)
-  }
+  }, [setPlaylistUrl])
 
-  async function fetchPlaylist(event?: FormEvent<HTMLFormElement>): Promise<void> {
+  const fetchPlaylist = useCallback(async (event?: FormEvent<HTMLFormElement>): Promise<void> => {
     event?.preventDefault()
     await loadPlaylistUrl(playlistUrl)
-  }
+  }, [loadPlaylistUrl, playlistUrl])
 
-  function removeEntry(entryId: string): void {
+  const removeEntry = useCallback((entryId: string): void => {
     setEntries((currentEntries) => currentEntries.filter((entry) => entry.id !== entryId))
-  }
+  }, [])
 
-  function confirmLongPlaylistLoadAll(): void {
+  const confirmLongPlaylistLoadAll = useCallback((): void => {
     if (!pendingLongPlaylist) {
       return
     }
@@ -118,9 +118,9 @@ export function PlaylistProvider({ children }: { children: ReactNode }): JSX.Ele
     setPlaylistTitle(pendingLongPlaylist.title)
     setEntries(pendingLongPlaylist.entries)
     setPendingLongPlaylist(null)
-  }
+  }, [pendingLongPlaylist])
 
-  function confirmLongPlaylistLoadFirst100(): void {
+  const confirmLongPlaylistLoadFirst100 = useCallback((): void => {
     if (!pendingLongPlaylist) {
       return
     }
@@ -128,7 +128,7 @@ export function PlaylistProvider({ children }: { children: ReactNode }): JSX.Ele
     setPlaylistTitle(pendingLongPlaylist.title)
     setEntries(takeFirstPlaylistEntries(pendingLongPlaylist.entries))
     setPendingLongPlaylist(null)
-  }
+  }, [pendingLongPlaylist])
 
   const value = useMemo(
     () => ({
@@ -145,7 +145,20 @@ export function PlaylistProvider({ children }: { children: ReactNode }): JSX.Ele
       confirmLongPlaylistLoadFirst100,
       removeEntry
     }),
-    [playlistUrl, playlistTitle, entries, pendingLongPlaylist, isLoading, error]
+    [
+      playlistUrl,
+      playlistTitle,
+      entries,
+      pendingLongPlaylist,
+      isLoading,
+      error,
+      setPlaylistUrl,
+      fetchPlaylist,
+      loadPlaylistUrl,
+      confirmLongPlaylistLoadAll,
+      confirmLongPlaylistLoadFirst100,
+      removeEntry
+    ]
   )
 
   return <PlaylistContext.Provider value={value}>{children}</PlaylistContext.Provider>

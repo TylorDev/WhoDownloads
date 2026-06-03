@@ -1,16 +1,8 @@
-import type { DownloadTask, DownloadTaskStatus } from '../types/ipc'
+import DownloadProgressFeedback from '../components/DownloadProgressFeedback/DownloadProgressFeedback'
 import { useDownloadContext } from '../contexts/DownloadContext'
 import { formatDuration } from '../utils/formatDuration'
 import { getDownloadTaskTitle } from '../utils/downloadTasks'
-
-const statusLabels: Record<DownloadTaskStatus, string> = {
-  queued: 'En cola',
-  starting: 'Preparando',
-  downloading: 'Descargando',
-  processing: 'Procesando',
-  completed: 'Completado',
-  failed: 'Error'
-}
+import type { DownloadTask, DownloadTaskStatus } from '../types/ipc'
 
 function getSortedTasks(tasks: DownloadTask[]): DownloadTask[] {
   const activeStatuses: DownloadTaskStatus[] = ['queued', 'starting', 'downloading', 'processing']
@@ -44,89 +36,67 @@ function DownloadsPage(): JSX.Element {
         </div>
       ) : (
         <div className="downloads-list">
-          {sortedTasks.map((task) => {
-            const percent = Math.max(0, Math.min(100, task.percent ?? 0))
-            const isFailed = task.status === 'failed'
-            const isCompleted = task.status === 'completed'
+          {sortedTasks.map((task) => (
+            <article className="download-task" key={task.id}>
+              <div className="download-task__media">
+                {task.metadata?.thumbnailUrl ? (
+                  <img src={task.metadata.thumbnailUrl} alt="" />
+                ) : (
+                  <span>{task.format.toUpperCase()}</span>
+                )}
+              </div>
 
-            return (
-              <article className="download-task" key={task.id}>
-                <div className="download-task__media">
-                  {task.metadata?.thumbnailUrl ? (
-                    <img src={task.metadata.thumbnailUrl} alt="" />
-                  ) : (
-                    <span>{task.format.toUpperCase()}</span>
-                  )}
+              <div className="download-task__content">
+                <div className="download-task__header">
+                  <div>
+                    <h2 className="download-task__title">{getDownloadTaskTitle(task)}</h2>
+                  </div>
+                  <span className="download-task__format">
+                    {task.format.toUpperCase()} - {task.quality}
+                  </span>
                 </div>
 
-                <div className="download-task__content">
-                  <div className="download-task__header">
-                    <div>
-                      <span
-                        className={[
-                          'download-task__status',
-                          isFailed ? 'download-task__status--failed' : '',
-                          isCompleted ? 'download-task__status--completed' : ''
-                        ].join(' ')}
-                      >
-                        {statusLabels[task.status]}
-                      </span>
-                      <h2 className="download-task__title">{getDownloadTaskTitle(task)}</h2>
-                    </div>
-                    <span className="download-task__format">
-                      {task.format.toUpperCase()} · {task.quality}
-                    </span>
-                  </div>
+                <p className="download-task__url break-anywhere">{task.url}</p>
 
-                  <p className="download-task__url break-anywhere">{task.url}</p>
-
-                  {task.metadata && (
-                    <dl className="download-task__metadata">
-                      {task.metadata.artist && (
-                        <div>
-                          <dt>Canal</dt>
-                          <dd>{task.metadata.artist}</dd>
-                        </div>
-                      )}
-                      {task.metadata.duration != null && (
-                        <div>
-                          <dt>Duracion</dt>
-                          <dd>{formatDuration(task.metadata.duration)}</dd>
-                        </div>
-                      )}
-                      {task.metadata.year && (
-                        <div>
-                          <dt>Anio</dt>
-                          <dd>{task.metadata.year}</dd>
-                        </div>
-                      )}
-                    </dl>
-                  )}
-
-                  <div className="download-task__bar" aria-hidden="true">
-                    <div className="download-task__bar-fill" style={{ width: `${percent}%` }} />
-                  </div>
-
-                  <div className="download-task__footer">
-                    <p className="download-task__message break-anywhere">
-                      {task.error || task.message || 'Esperando progreso...'}
-                      {task.speed ? ` · ${task.speed}` : ''}
-                      {task.eta ? ` · ETA ${task.eta}` : ''}
-                    </p>
-                    {task.filePath && (
-                      <button
-                        className="secondary-button"
-                        type="button"
-                        onClick={() => void showDownloadInFolder(task.filePath!)}
-                      >
-                        Mostrar en carpeta
-                      </button>
+                {task.metadata && (
+                  <dl className="download-task__metadata">
+                    {task.metadata.artist && (
+                      <div>
+                        <dt>Canal</dt>
+                        <dd>{task.metadata.artist}</dd>
+                      </div>
                     )}
+                    {task.metadata.duration != null && (
+                      <div>
+                        <dt>Duracion</dt>
+                        <dd>{formatDuration(task.metadata.duration)}</dd>
+                      </div>
+                    )}
+                    {task.metadata.year && (
+                      <div>
+                        <dt>Anio</dt>
+                        <dd>{task.metadata.year}</dd>
+                      </div>
+                    )}
+                  </dl>
+                )}
+
+                <DownloadProgressFeedback compact progress={task} />
+
+                {task.filePath && (
+                  <div className="download-task__footer">
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() => void showDownloadInFolder(task.filePath!)}
+                    >
+                      Mostrar en carpeta
+                    </button>
                   </div>
-                </div>
-              </article>
-            )
-          })}
+                )}
+              </div>
+            </article>
+          ))}
         </div>
       )}
     </section>

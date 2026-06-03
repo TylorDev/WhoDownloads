@@ -4,6 +4,7 @@ import type {
   DownloadProgress,
   DownloadQuality,
   DownloadResult,
+  DownloadStep,
   DownloadTask,
   VideoMetadataPreview
 } from '../../../shared/downloadTypes'
@@ -37,6 +38,16 @@ export function getDownloadTaskTitle(task: DownloadTask): string {
   return task.metadata?.title || task.url
 }
 
+function appendStepHistory(stepHistory: DownloadStep[] | undefined, step: DownloadStep | undefined): DownloadStep[] | undefined {
+  if (!step) {
+    return stepHistory
+  }
+
+  const nextStepHistory = stepHistory ?? []
+
+  return nextStepHistory.includes(step) ? nextStepHistory : [...nextStepHistory, step]
+}
+
 export function applyTaskProgress(tasks: DownloadTask[], progress: DownloadProgress): DownloadTask[] {
   if (!progress.taskId) {
     return tasks
@@ -47,6 +58,8 @@ export function applyTaskProgress(tasks: DownloadTask[], progress: DownloadProgr
       ? {
           ...task,
           status: progress.status,
+          step: progress.step ?? task.step,
+          stepHistory: appendStepHistory(task.stepHistory, progress.step),
           percent: progress.percent ?? task.percent,
           speed: progress.speed,
           eta: progress.eta,
@@ -71,6 +84,8 @@ export function applyTaskResult(
       return {
         ...task,
         status: 'completed',
+        step: 'completed',
+        stepHistory: appendStepHistory(task.stepHistory, 'completed'),
         percent: 100,
         filePath: result.filePath,
         message: result.filePath ? `Descargado en ${result.filePath}` : 'Descarga completada.'
@@ -80,6 +95,8 @@ export function applyTaskResult(
     return {
       ...task,
       status: 'failed',
+      step: 'failed',
+      stepHistory: appendStepHistory(task.stepHistory, 'failed'),
       error: result.error,
       message: result.error
     }

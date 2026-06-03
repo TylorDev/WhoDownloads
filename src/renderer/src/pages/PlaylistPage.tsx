@@ -2,13 +2,13 @@ import { useEffect } from 'react'
 import PlaylistPanel from '../components/PlaylistPanel/PlaylistPanel'
 import StatusPanel from '../components/StatusPanel/StatusPanel'
 import { useDownloadContext } from '../contexts/DownloadContext'
-import { PlaylistProvider, usePlaylistContext } from '../contexts/PlaylistContext'
+import { usePlaylistContext } from '../contexts/PlaylistContext'
 import { useNavigation } from '../contexts/NavigationContext'
 import type { QueueVideo } from '../components/Cola/types'
 import { playlistEntriesToQueueVideos } from '../utils/queueVideos'
 import type { VideoMetadataPreview } from '../../../shared/downloadTypes'
 
-function PlaylistPageContent(): JSX.Element {
+function PlaylistPage(): JSX.Element {
   const playlist = usePlaylistContext()
   const download = useDownloadContext()
   const { pendingPlaylistUrl, clearPendingPlaylistUrl } = useNavigation()
@@ -79,14 +79,6 @@ function PlaylistPageContent(): JSX.Element {
       />
       <StatusPanel progress={download.progress} />
     </section>
-  )
-}
-
-function PlaylistPage(): JSX.Element {
-  return (
-    <PlaylistProvider>
-      <PlaylistPageContent />
-    </PlaylistProvider>
   )
 }
 

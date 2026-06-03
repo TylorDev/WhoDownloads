@@ -5,12 +5,12 @@ import StatusPanel from '../components/StatusPanel/StatusPanel'
 import YouTubeBrowser from '../components/YouTubeBrowser/YouTubeBrowser'
 import { useDownloadContext } from '../contexts/DownloadContext'
 import { useNavigation } from '../contexts/NavigationContext'
-import { YouTubeProvider, useYouTubeContext } from '../contexts/YouTubeContext'
+import { useYouTubeContext } from '../contexts/YouTubeContext'
 import type { QueueVideo } from '../components/Cola/types'
 import { urlsToQueueVideos } from '../utils/queueVideos'
 import type { VideoMetadataPreview } from '../../../shared/downloadTypes'
 
-function YouTubePageContent(): JSX.Element {
+function YouTubePage(): JSX.Element {
   const youtube = useYouTubeContext()
   const download = useDownloadContext()
   const { setActivePage } = useNavigation()
@@ -90,7 +90,7 @@ function YouTubePageContent(): JSX.Element {
         <YouTubeBrowser
           youtubeWebviewPreloadPath={youtube.youtubeWebviewPreloadPath}
           clickedVideos={youtube.clickedVideos}
-          youtubeWebviewRef={youtube.youtubeWebviewRef}
+          bindYouTubeWebview={youtube.bindYouTubeWebview}
           onUseVideo={useVideo}
           onQuickDownloadVideo={quickDownload}
         />
@@ -125,14 +125,6 @@ function YouTubePageContent(): JSX.Element {
         <StatusPanel progress={download.progress} />
       </div>
     </section>
-  )
-}
-
-function YouTubePage(): JSX.Element {
-  return (
-    <YouTubeProvider>
-      <YouTubePageContent />
-    </YouTubeProvider>
   )
 }
 

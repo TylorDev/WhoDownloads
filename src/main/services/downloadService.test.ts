@@ -215,11 +215,12 @@ describe('downloadVideo', () => {
 
     expect(result).toEqual({ ok: true, filePath: 'C:\\Downloads\\song.mp3' })
     expect(sender.sent).toEqual([
-      ['download-progress', { status: 'starting', message: 'Preparando descarga...' }],
+      ['download-progress', { status: 'starting', step: 'preparing', message: 'Preparando descarga...' }],
       [
         'download-progress',
         {
           status: 'completed',
+          step: 'completed',
           percent: 100,
           filePath: 'C:\\Downloads\\song.mp3',
           message: 'Descargado: C:\\Downloads\\song.mp3'
@@ -263,6 +264,7 @@ describe('downloadVideo', () => {
       'download-progress',
       expect.objectContaining({
         status: 'failed',
+        step: 'failed',
         message: expect.stringContaining('No se pudo acceder a yt-dlp.exe')
       })
     ])
@@ -325,6 +327,7 @@ describe('downloadVideo', () => {
       {
         taskId: 'task-1',
         status: 'completed',
+        step: 'completed',
         percent: 100,
         filePath: 'C:\\Downloads\\song.mp3',
         message: 'Descargado: C:\\Downloads\\song.mp3'
@@ -527,6 +530,7 @@ describe('downloadVideo', () => {
       'download-progress',
       {
         status: 'completed',
+        step: 'completed',
         percent: 100,
         filePath: 'C:\\Downloads\\video.mp4',
         message: 'Descargado: C:\\Downloads\\video.mp4'

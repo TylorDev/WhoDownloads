@@ -5,10 +5,27 @@ export function splitProgressLines(chunk: string): string[] {
 }
 
 export function parseProgressLine(line: string, format: DownloadFormat): DownloadProgress | null {
-  if (line.includes('[Merger]') || line.includes('[ExtractAudio]')) {
+  if (/\[Merger\]/i.test(line)) {
     return {
       status: 'processing',
-      message: format === 'mp3' ? 'Procesando audio...' : 'Procesando MP4...'
+      step: 'merging',
+      message: 'Unificando archivo...'
+    }
+  }
+
+  if (/thumbnail|cover|EmbedThumbnail|ThumbnailsConvertor/i.test(line)) {
+    return {
+      status: 'processing',
+      step: 'downloading-cover',
+      message: 'Descargando cover...'
+    }
+  }
+
+  if (/\[ExtractAudio\]|\[VideoConvertor\]|recode|converting|conversion/i.test(line)) {
+    return {
+      status: 'processing',
+      step: 'converting',
+      message: format === 'mp3' ? 'Convirtiendo audio...' : 'Convirtiendo MP4...'
     }
   }
 
@@ -21,11 +38,12 @@ export function parseProgressLine(line: string, format: DownloadFormat): Downloa
   const etaMatch = line.match(/ETA\s+([^\s]+)/)
 
   if (!percentMatch) {
-    return { status: 'downloading', message: line.replace('[download]', '').trim() }
+    return { status: 'downloading', step: 'downloading-file', message: line.replace('[download]', '').trim() }
   }
 
   return {
     status: 'downloading',
+    step: 'downloading-file',
     percent: Number(percentMatch[1]),
     speed: speedMatch?.[1],
     eta: etaMatch?.[1]

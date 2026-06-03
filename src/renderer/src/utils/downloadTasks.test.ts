@@ -28,6 +28,7 @@ describe('downloadTasks helpers', () => {
       applyTaskProgress(tasks, {
         taskId: 't1',
         status: 'downloading',
+        step: 'downloading-file',
         percent: 40,
         speed: '1MiB/s',
         eta: '00:10',
@@ -35,10 +36,39 @@ describe('downloadTasks helpers', () => {
       })[0]
     ).toMatchObject({
       status: 'downloading',
+      step: 'downloading-file',
+      stepHistory: ['downloading-file'],
       percent: 40,
       speed: '1MiB/s',
       eta: '00:10',
       message: '40%'
+    })
+  })
+
+  it('keeps an ordered unique step history for task progress', () => {
+    const tasks = [
+      createDownloadTask({ url: 'https://youtu.be/abc', format: 'mp3', quality: '192', taskId: 't1' })
+    ]
+
+    const coverTasks = applyTaskProgress(tasks, {
+      taskId: 't1',
+      status: 'processing',
+      step: 'downloading-cover'
+    })
+    const duplicateCoverTasks = applyTaskProgress(coverTasks, {
+      taskId: 't1',
+      status: 'processing',
+      step: 'downloading-cover'
+    })
+    const convertingTasks = applyTaskProgress(duplicateCoverTasks, {
+      taskId: 't1',
+      status: 'processing',
+      step: 'converting'
+    })
+
+    expect(convertingTasks[0]).toMatchObject({
+      step: 'converting',
+      stepHistory: ['downloading-cover', 'converting']
     })
   })
 
@@ -59,9 +89,16 @@ describe('downloadTasks helpers', () => {
 
     expect(failedTasks[0]).toMatchObject({
       status: 'completed',
+      step: 'completed',
+      stepHistory: ['completed'],
       filePath: 'C:\\Downloads\\song.mp3'
     })
-    expect(failedTasks[1]).toMatchObject({ status: 'failed', error: 'failed' })
+    expect(failedTasks[1]).toMatchObject({
+      status: 'failed',
+      step: 'failed',
+      stepHistory: ['failed'],
+      error: 'failed'
+    })
   })
 
   it('uses metadata title with URL fallback for display titles', () => {

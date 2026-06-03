@@ -1,11 +1,10 @@
-import type { RefObject } from 'react'
 import type { YouTubeWebviewElement } from '../../types/ipc'
 import './YouTubeBrowser.scss'
 
 interface YouTubeBrowserProps {
   youtubeWebviewPreloadPath: string
   clickedVideos: string[]
-  youtubeWebviewRef: RefObject<YouTubeWebviewElement | null>
+  bindYouTubeWebview: (webview: YouTubeWebviewElement | null) => void
   onUseVideo: (videoUrl: string) => void
   onQuickDownloadVideo: (videoUrl: string) => void
 }
@@ -13,7 +12,7 @@ interface YouTubeBrowserProps {
 function YouTubeBrowser({
   youtubeWebviewPreloadPath,
   clickedVideos,
-  youtubeWebviewRef,
+  bindYouTubeWebview,
   onUseVideo,
   onQuickDownloadVideo
 }: YouTubeBrowserProps): JSX.Element {
@@ -21,7 +20,7 @@ function YouTubeBrowser({
     <section className="youtube-browser">
       {youtubeWebviewPreloadPath ? (
         <webview
-          ref={youtubeWebviewRef}
+          ref={bindYouTubeWebview}
           className="youtube-browser__webview"
           src="https://www.youtube.com"
           preload={youtubeWebviewPreloadPath}

@@ -86,7 +86,7 @@ export function useDownload(): UseDownloadReturn {
 
     if (!hasCurrentPreview) {
       setIsPreviewLoading(true)
-      setProgress({ status: 'starting', message: 'Cargando preview de metadata...' })
+      setProgress({ status: 'starting', step: 'preparing', message: 'Cargando preview de metadata...' })
 
       const preview = await window.whoDownloads.previewVideo(cleanUrl)
 
@@ -104,7 +104,7 @@ export function useDownload(): UseDownloadReturn {
     }
 
     setIsDownloading(true)
-    setProgress({ status: 'starting', message: 'Preparando descarga...' })
+    setProgress({ status: 'starting', step: 'preparing', message: 'Preparando descarga...' })
 
     const input: DownloadInput =
       format === 'mp3'
@@ -122,6 +122,7 @@ export function useDownload(): UseDownloadReturn {
     setIsDownloading(false)
     setProgress({
       status: 'completed',
+      step: 'completed',
       percent: 100,
       filePath: result.filePath,
       message: result.filePath ? `Descargado en ${result.filePath}` : 'Descarga completada.'

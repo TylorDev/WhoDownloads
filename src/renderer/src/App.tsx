@@ -2,8 +2,10 @@ import { lazy, Suspense } from 'react'
 import AppHeader from './components/AppHeader/AppHeader'
 import { DownloadProvider } from './contexts/DownloadContext'
 import { NavigationProvider, useNavigation } from './contexts/NavigationContext'
+import { PlaylistProvider } from './contexts/PlaylistContext'
 import { SettingsProvider } from './contexts/SettingsContext'
 import { UrlIntakeProvider } from './contexts/UrlIntakeContext'
+import { YouTubeProvider } from './contexts/YouTubeContext'
 import HomePage from './pages/HomePage'
 import './App.scss'
 
@@ -83,7 +85,11 @@ function App(): JSX.Element {
     <NavigationProvider>
       <SettingsProvider>
         <DownloadProvider>
-          <AppContent />
+          <PlaylistProvider>
+            <YouTubeProvider>
+              <AppContent />
+            </YouTubeProvider>
+          </PlaylistProvider>
         </DownloadProvider>
       </SettingsProvider>
     </NavigationProvider>

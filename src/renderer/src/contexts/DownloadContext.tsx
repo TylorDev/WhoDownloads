@@ -151,7 +151,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
       async function loadPreview(): Promise<void> {
         setIsPreviewLoading(true)
         isPreviewLoadingRef.current = true
-        setProgress({ status: 'starting', message: 'Cargando preview de metadata...' })
+        setProgress({ status: 'starting', step: 'preparing', message: 'Cargando preview de metadata...' })
         console.log(`[renderer:preview] start ${cleanUrl}`)
 
         const preview = await window.whoDownloads.previewVideo(cleanUrl).catch((error: unknown) => ({
@@ -238,7 +238,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
 
     isDownloadingRef.current = true
     setIsDownloading(true)
-    setProgress({ status: 'starting', message: 'Preparando descarga...' })
+    setProgress({ status: 'starting', step: 'preparing', message: 'Preparando descarga...' })
     console.log(
       `[renderer:download] start ${JSON.stringify({
         url: taskInput.url,
@@ -271,6 +271,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     }
     setProgress({
       status: 'completed',
+      step: 'completed',
       percent: 100,
       filePath: result.filePath,
       message: result.filePath ? `Descargado en ${result.filePath}` : 'Descarga completada.'
@@ -361,6 +362,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     setIsDownloading(true)
     setProgress({
       status: 'starting',
+      step: 'preparing',
       message: `Descargando ${uniqueUrls.length} videos de ${sourceLabel} en grupos de ${MAX_PARALLEL_BATCH_DOWNLOADS}...`
     })
 
@@ -386,6 +388,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
 
           setProgress({
             status: failed > 0 ? 'processing' : 'downloading',
+            step: 'downloading-file',
             percent: Math.round(((completed + failed) / taskInputs.length) * 100),
             message: `Lista: ${completed} completadas, ${failed} fallidas, ${taskInputs.length - completed - failed} pendientes.`
           })
@@ -394,6 +397,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
 
       setProgress({
         status: failed > 0 ? 'failed' : 'completed',
+        step: failed > 0 ? 'failed' : 'completed',
         percent: 100,
         message:
           failed > 0
@@ -432,7 +436,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
       previewRequestIdRef.current = requestId
       setIsPreviewLoading(true)
       isPreviewLoadingRef.current = true
-      setProgress({ status: 'starting', message: 'Cargando preview de metadata...' })
+      setProgress({ status: 'starting', step: 'preparing', message: 'Cargando preview de metadata...' })
       console.log(`[renderer:preview] submit-start ${cleanUrl}`)
 
       const preview = await window.whoDownloads.previewVideo(cleanUrl).catch((error: unknown) => ({

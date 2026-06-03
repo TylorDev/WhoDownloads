@@ -264,7 +264,7 @@ export async function downloadVideo(
   }
 
   activeDownloads += 1
-  emitProgress(sender, withTaskId(input, { status: 'starting', message: 'Preparando descarga...' }))
+  emitProgress(sender, withTaskId(input, { status: 'starting', step: 'preparing', message: 'Preparando descarga...' }))
 
   try {
     const outputDirectory = settings?.downloadDirectory || getDownloadOutputDirectory(app)
@@ -292,7 +292,7 @@ export async function downloadVideo(
       authArgs
     )
     if (!preflight.ok) {
-      emitProgress(sender, withTaskId(input, { status: 'failed', message: preflight.error }))
+      emitProgress(sender, withTaskId(input, { status: 'failed', step: 'failed', message: preflight.error }))
       return { ok: false, error: preflight.error }
     }
 
@@ -336,6 +336,7 @@ export async function downloadVideo(
         sender,
         withTaskId(input, {
           status: 'completed',
+          step: 'completed',
           percent: 100,
           filePath: result.filePath,
           message: result.filePath ? `Descargado: ${result.filePath}` : 'Descarga completada.'
@@ -355,7 +356,7 @@ export async function downloadVideo(
         message
       })}`
     )
-    emitProgress(sender, withTaskId(input, { status: 'failed', message }))
+    emitProgress(sender, withTaskId(input, { status: 'failed', step: 'failed', message }))
 
     return { ok: false, error: message }
   } finally {

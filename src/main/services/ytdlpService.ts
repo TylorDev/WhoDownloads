@@ -252,7 +252,7 @@ export function runYtDlpDownload(
     child.stdout.setEncoding('utf8')
     child.stderr.setEncoding('utf8')
 
-    child.stdout.on('data', (chunk: string) => {
+    function handleDownloadOutput(chunk: string): void {
       for (const line of splitProgressLines(chunk)) {
         const printedPath = extractPrintedFilePath(line)
         if (printedPath) {
@@ -264,13 +264,16 @@ export function runYtDlpDownload(
           onProgress(progress)
         }
       }
-    })
+    }
+
+    child.stdout.on('data', handleDownloadOutput)
 
     child.stderr.on('data', (chunk: string) => {
       stderr += chunk
       for (const line of splitProgressLines(chunk)) {
         logger?.warn(`[download:stderr] ${line}`)
       }
+      handleDownloadOutput(chunk)
     })
 
     child.on('error', (error) => {
