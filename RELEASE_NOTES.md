@@ -1,47 +1,29 @@
-# WhoDownloads v1.0.0
+# WhoDownloads v1.0.1
 
-First official release of WhoDownloads — a Windows desktop app to download YouTube videos and playlists as MP4 or MP3.
+Patch release focused on more reliable YouTube downloads and clearer diagnostics when a format is not directly available.
 
-## ✨ Features
+## What's New
 
-### Video Downloads
-- Paste, type, or drag a YouTube URL to download a video
-- Preview video metadata (title, thumbnail, duration) before downloading
-- Choose between **MP4** video or **MP3** audio formats
-- Select quality: `auto`, `1080p`, `720p`, `480p` for MP4 — `auto`, `320kbps`, `192kbps`, `128kbps` for MP3
-- Choose a custom download folder or use the default (`Downloads/WhoDownloads`)
+- MP4 downloads now prefer direct H.264/AAC streams, then fall back to the best available video/audio up to the requested quality.
+- If a user asks for 1080p but the source video only has 720p, WhoDownloads now uses the best available resolution instead of failing only because 1080p is unavailable.
+- MP4 output is converted to a broadly compatible H.264/AAC file when YouTube provides VP9/AV1 or another less compatible stream.
+- Download logs in the Electron main console now show the selected format, requested quality, output folder, whether cookies are used, the yt-dlp format selector, stderr lines, exit code, and final normalized error.
+- Error messages are clearer when no downloadable MP4 format is found or ffmpeg conversion fails.
+- Fixed broken accent/separator text in visible Spanish messages.
 
-### Quick Download
-- Configure your preferred folder, format, and quality in Settings
-- Enable Quick Download to skip the preview step and download instantly on URL paste
+## Patch Notes
 
-### Playlist Support
-- Paste a YouTube playlist URL to load and preview all videos
-- Remove videos you don't need before downloading
-- Download individual videos or the entire playlist
-- Smart handling for large playlists: option to load only the first 100 entries
+- Keeps MP3 320 kbps behavior intact.
+- Keeps YouTube cookie support, without logging the cookie file path.
+- Keeps the existing UI flow and download manager behavior.
+- Adds regression coverage for MP4 fallback selectors, 1080p fallback behavior, logging, and MP3 quality arguments.
 
-### Embedded YouTube Browser
-- Browse YouTube directly inside the app
-- Videos you visit are automatically detected and added to a download queue
-- Download a single video from the queue or batch download all of them
-- Sign in to YouTube from this view if anti-bot verification is required
+## Installation
 
-### Download Manager
-- Track active, completed, and failed downloads in real time
-- Progress indicators for each download task
-- Open the containing folder for any completed download
+Download `WhoDownloads-Setup-1.0.1.exe` from the release assets and run the installer.
 
-## 🏗️ Built With
-- Electron + React + Vite + TypeScript
-- yt-dlp and ffmpeg (bundled as local binaries)
-- Secure architecture: context isolation, sandbox enabled, no Node.js access in renderer
+## Notes
 
-## 📦 Installation
-
-Download `WhoDownloads-Setup-1.0.0.exe` from the assets below and run the installer.
-
-## ⚠️ Notes
-- Windows only for now
-- No automatic updates — check this page for new releases
-- If YouTube asks for verification, sign in from the embedded YouTube view inside the app
+- Windows only for now.
+- If YouTube asks for verification, sign in from the embedded YouTube view inside the app and retry.
+- MP4 fallback conversion can take longer than a direct download because ffmpeg may need to re-encode the video.
