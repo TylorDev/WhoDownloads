@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { App, WebContents } from 'electron'
 import { downloadVideo, previewVideo } from './downloadService'
 import { runYtDlpDownload } from './ytdlpService'
@@ -103,6 +103,13 @@ describe('downloadVideo', () => {
   beforeEach(() => {
     vi.mocked(runYtDlpDownload).mockReset()
     vi.mocked(getYtDlpCookieArgs).mockResolvedValue([])
+    vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('emits starting and completed progress for successful downloads', async () => {
@@ -179,11 +186,12 @@ describe('downloadVideo', () => {
       'C:\\bin\\yt-dlp.exe',
       expect.arrayContaining(['-o', 'D:\\Videos\\%(title).180B.%(ext)s']),
       'mp4',
-      expect.any(Function)
+      expect.any(Function),
+      expect.any(Object)
     )
   })
 
-  it('passes embedded YouTube cookies to yt-dlp downloads', async () => {
+  it('passes embedded YouTube cookies to yt-dlp downloads without logging cookie paths', async () => {
     const sender = createSenderStub()
     vi.mocked(getYtDlpCookieArgs).mockResolvedValue(['--cookies', 'C:\\UserData\\cookies.txt'])
     vi.mocked(runYtDlpDownload).mockResolvedValue({ ok: true, filePath: 'D:\\Videos\\song.mp4' })
@@ -198,11 +206,14 @@ describe('downloadVideo', () => {
       'C:\\bin\\yt-dlp.exe',
       expect.arrayContaining(['--cookies', 'C:\\UserData\\cookies.txt']),
       'mp4',
-      expect.any(Function)
+      expect.any(Function),
+      expect.any(Object)
     )
+    expect(console.info).toHaveBeenCalledWith(expect.stringContaining('"usesCookies":true'))
+    expect(console.info).not.toHaveBeenCalledWith(expect.stringContaining('cookies.txt'))
   })
 
-  it('returns MP4 format errors with the compatibility message', async () => {
+  it('returns MP4 format errors with fallback conversion guidance', async () => {
     const sender = createSenderStub()
     vi.mocked(runYtDlpDownload).mockResolvedValue({
       ok: false,
@@ -217,8 +228,47 @@ describe('downloadVideo', () => {
 
     expect(result).toEqual({
       ok: false,
-      error: 'No se encontró una versión MP4 compatible H.264/AAC para esta calidad.'
+      error:
+        'No se encontró un formato descargable para esta calidad. Se intentó MP4 H.264/AAC directo y fallback con conversión.'
     })
+  })
+
+  it('logs download context, selector, and final failure details', async () => {
+    const sender = createSenderStub()
+    vi.mocked(runYtDlpDownload).mockResolvedValue({
+      ok: false,
+      stderr: 'ERROR: Requested format is not available',
+      exitCode: 1
+    })
+
+    await downloadVideo(
+      createAppStub(),
+      { url: ' https://youtu.be/abc ', format: 'mp4', quality: '1080', taskId: 'task-1' },
+      sender
+    )
+
+    expect(console.info).toHaveBeenCalledWith(expect.stringContaining('[download:start]'))
+    expect(console.info).toHaveBeenCalledWith(expect.stringContaining('"quality":"1080"'))
+    expect(console.info).toHaveBeenCalledWith(expect.stringContaining('"usesCookies":false'))
+    expect(console.info).toHaveBeenCalledWith(expect.stringContaining('[download:selector]'))
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('[download:failed]'))
+  })
+
+  it('passes an MP4 selector that can fall back from requested 1080p to lower available formats', async () => {
+    const sender = createSenderStub()
+    vi.mocked(runYtDlpDownload).mockResolvedValue({ ok: true, filePath: 'C:\\Downloads\\video.mp4' })
+
+    await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/abc', format: 'mp4', quality: '1080' },
+      sender
+    )
+
+    const args = vi.mocked(runYtDlpDownload).mock.calls[0][1]
+    const selector = args[args.indexOf('-f') + 1]
+
+    expect(selector).toContain('[height<=1080]')
+    expect(selector).toContain('/bv*[height<=1080]+ba/b[height<=1080]')
   })
 
   it('returns MP3 extraction errors with the MP3 message', async () => {

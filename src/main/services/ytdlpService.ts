@@ -8,7 +8,13 @@ export type YtDlpMetadataResult =
 
 export type YtDlpDownloadResult =
   | { ok: true; filePath?: string }
-  | { ok: false; stderr: string; error?: string }
+  | { ok: false; stderr: string; error?: string; exitCode?: number | null }
+
+export type YtDlpDownloadLogger = {
+  info: (message: string) => void
+  warn: (message: string) => void
+  error: (message: string) => void
+}
 
 function getSpawnErrorMessage(error: Error): string {
   return error.message.includes('ENOENT')
@@ -68,7 +74,8 @@ export function runYtDlpDownload(
   ytDlpPath: string,
   args: string[],
   format: DownloadFormat,
-  onProgress: (progress: DownloadProgress) => void
+  onProgress: (progress: DownloadProgress) => void,
+  logger?: YtDlpDownloadLogger
 ): Promise<YtDlpDownloadResult> {
   return new Promise<YtDlpDownloadResult>((resolve) => {
     const child = spawn(ytDlpPath, args, {
@@ -98,25 +105,34 @@ export function runYtDlpDownload(
 
     child.stderr.on('data', (chunk: string) => {
       stderr += chunk
+      for (const line of splitProgressLines(chunk)) {
+        logger?.warn(`[download:stderr] ${line}`)
+      }
     })
 
     child.on('error', (error) => {
-      resolve({ ok: false, stderr, error: getSpawnErrorMessage(error) })
+      const message = getSpawnErrorMessage(error)
+      logger?.error(`[download:spawn-error] ${message}`)
+      resolve({ ok: false, stderr, error: message })
     })
 
     child.on('close', (code) => {
       if (code === 0) {
+        logger?.info(`[download:exit] yt-dlp completed with code 0`)
         resolve({ ok: true, filePath })
         return
       }
 
+      const error = normalizeYtDlpErrorMessage(
+        stderr.trim().split(/\r?\n/).at(-1) ??
+          `yt-dlp termino con codigo ${code ?? 'desconocido'}.`
+      )
+      logger?.error(`[download:exit] yt-dlp failed with code ${code ?? 'unknown'}: ${error}`)
       resolve({
         ok: false,
+        exitCode: code,
         stderr,
-        error: normalizeYtDlpErrorMessage(
-          stderr.trim().split(/\r?\n/).at(-1) ??
-            `yt-dlp termino con codigo ${code ?? 'desconocido'}.`
-        )
+        error
       })
     })
   })

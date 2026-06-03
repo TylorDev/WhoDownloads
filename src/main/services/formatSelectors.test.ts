@@ -7,11 +7,15 @@ describe('getMp4FormatSelector', () => {
 
     expect(selector).toContain('[vcodec^=avc1]')
     expect(selector).toContain('[acodec^=mp4a]')
+    expect(selector).toContain('/bv*+ba/b')
     expect(selector).not.toContain('av01')
   })
 
-  it('limits MP4 video height for explicit quality', () => {
-    expect(getMp4FormatSelector('720')).toContain('[height<=720]')
+  it('limits explicit MP4 quality while allowing the best lower available video', () => {
+    const selector = getMp4FormatSelector('1080')
+
+    expect(selector).toContain('[height<=1080]')
+    expect(selector).toContain('/bv*[height<=1080]+ba/b[height<=1080]')
   })
 })
 
@@ -34,6 +38,10 @@ describe('getYtDlpArgs', () => {
 
     expect(args).toContain('--merge-output-format')
     expect(args).toContain('mp4')
+    expect(args).toContain('--recode-video')
+    expect(args).toContain('--postprocessor-args')
+    expect(args.join(' ')).toContain('libx264')
+    expect(args.join(' ')).toContain('-c:a aac')
     expect(args).toContain('--embed-metadata')
     expect(args.join(' ')).toContain('[height<=1080]')
     expect(args.join(' ')).toContain('meta_album')

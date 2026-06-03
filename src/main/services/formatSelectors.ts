@@ -1,15 +1,14 @@
 import type { DownloadInput, Mp3Quality, Mp4Quality } from '../../shared/downloadTypes'
 
 export function getMp4FormatSelector(quality: Mp4Quality): string {
-  const videoFilter =
-    quality === 'auto'
-      ? '[ext=mp4][vcodec^=avc1]'
-      : `[ext=mp4][vcodec^=avc1][height<=${quality}]`
+  const heightFilter = quality === 'auto' ? '' : `[height<=${quality}]`
+  const compatibleVideoFilter = `[ext=mp4][vcodec^=avc1]${heightFilter}`
   const audioFilter = '[ext=m4a][acodec^=mp4a]'
+  const compatibleMuxedFilter = `[ext=mp4][vcodec^=avc1][acodec^=mp4a]${heightFilter}`
+  const fallbackVideoFilter = `bv*${heightFilter}`
+  const fallbackMuxedFilter = `b${heightFilter}`
 
-  return `bv*${videoFilter}+ba${audioFilter}/b[ext=mp4][vcodec^=avc1][acodec^=mp4a]${
-    quality === 'auto' ? '' : `[height<=${quality}]`
-  }`
+  return `bv*${compatibleVideoFilter}+ba${audioFilter}/${compatibleMuxedFilter}/${fallbackVideoFilter}+ba/${fallbackMuxedFilter}`
 }
 
 export function getMp3AudioQuality(quality: Mp3Quality): string {
@@ -75,6 +74,12 @@ export function getYtDlpArgs(
     getMp4FormatSelector(input.quality),
     '--merge-output-format',
     'mp4',
+    '--recode-video',
+    'mp4',
+    '--postprocessor-args',
+    'Merger+ffmpeg_o:-c:v libx264 -preset veryfast -crf 21 -c:a aac -b:a 192k -movflags +faststart',
+    '--postprocessor-args',
+    'VideoConvertor+ffmpeg_o:-c:v libx264 -preset veryfast -crf 21 -c:a aac -b:a 192k -movflags +faststart',
     '--embed-metadata',
     '--parse-metadata',
     '%(webpage_url)s:%(meta_album)s',
