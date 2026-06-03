@@ -20,6 +20,7 @@ import { getWindowsNodeRuntimePath, getYtDlpJsRuntimeArgs } from '../utils/ytdlp
 
 const MAX_PARALLEL_DOWNLOADS = 4
 let activeDownloads = 0
+let activePreviewController: AbortController | undefined
 
 const downloadLogger: YtDlpDownloadLogger = {
   info: (message) => {
@@ -212,10 +213,34 @@ export async function previewVideo(app: App, url: string): Promise<MetadataResul
   }
 
   const authArgs = await getYtDlpCookieArgs(app)
+  const ytDlpPath = getWindowsBinaryPath(app, 'yt-dlp')
   const nodePath = getWindowsNodeRuntimePath(app)
   const runtimeArgs = getYtDlpJsRuntimeArgs(nodePath)
+  const ytDlpAccess = await checkBinaryAccess('yt-dlp.exe', ytDlpPath)
+  if (!ytDlpAccess.ok) {
+    console.error(`[preview:preflight] ${ytDlpAccess.error}`)
+    return { ok: false, error: ytDlpAccess.error }
+  }
 
-  return fetchVideoMetadata(getWindowsBinaryPath(app, 'yt-dlp'), cleanUrl, authArgs, runtimeArgs)
+  const nodeAccess = await checkBinaryAccess('node.exe', nodePath)
+  if (!nodeAccess.ok) {
+    console.error(`[preview:preflight] ${nodeAccess.error}`)
+    return { ok: false, error: nodeAccess.error }
+  }
+
+  activePreviewController?.abort()
+  const previewController = new AbortController()
+  activePreviewController = previewController
+
+  try {
+    return await fetchVideoMetadata(ytDlpPath, cleanUrl, authArgs, runtimeArgs, {
+      signal: previewController.signal
+    })
+  } finally {
+    if (activePreviewController === previewController) {
+      activePreviewController = undefined
+    }
+  }
 }
 
 export async function downloadVideo(

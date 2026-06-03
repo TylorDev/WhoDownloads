@@ -23,16 +23,28 @@ export type YtDlpJsonLogger = {
   error: (message: string) => void
 }
 
+export type YtDlpJsonOptions = {
+  timeoutMs?: number
+  signal?: AbortSignal
+  maxStdoutBytes?: number
+}
+
 type YtDlpCommandOutput = {
   stdout: string
   stderr: string
   exitCode?: number | null
 }
 
+const DEFAULT_JSON_STDOUT_LIMIT_BYTES = 8 * 1024 * 1024
+
 function getSpawnErrorMessage(error: Error): string {
   return error.message.includes('ENOENT')
     ? 'No se encontro resources/bin/win/yt-dlp.exe. Agrega el binario y vuelve a intentar.'
     : error.message
+}
+
+function sanitizeArgsForLog(args: string[]): string[] {
+  return args.map((arg, index) => (args[index - 1] === '--cookies' ? '[cookies-file]' : arg))
 }
 
 export function normalizeYtDlpErrorMessage(message: string): string {
@@ -44,7 +56,8 @@ export function normalizeYtDlpErrorMessage(message: string): string {
 export function runYtDlpForJson(
   ytDlpPath: string,
   args: string[],
-  logger?: YtDlpJsonLogger
+  logger?: YtDlpJsonLogger,
+  options: YtDlpJsonOptions = {}
 ): Promise<YtDlpMetadataResult> {
   return new Promise<YtDlpMetadataResult>((resolve) => {
     const child = spawn(ytDlpPath, args, {
@@ -54,12 +67,72 @@ export function runYtDlpForJson(
 
     let stdout = ''
     let stderr = ''
+    let isResolved = false
+    const maxStdoutBytes = options.maxStdoutBytes ?? DEFAULT_JSON_STDOUT_LIMIT_BYTES
+    let timeout: NodeJS.Timeout | undefined
+
+    function cleanup(): void {
+      if (timeout) {
+        clearTimeout(timeout)
+      }
+      options.signal?.removeEventListener('abort', handleAbort)
+    }
+
+    function killChild(): void {
+      if (!child.killed) {
+        child.kill()
+      }
+    }
+
+    function resolveOnce(result: YtDlpMetadataResult): void {
+      if (isResolved) {
+        return
+      }
+
+      isResolved = true
+      cleanup()
+      resolve(result)
+    }
+
+    function handleAbort(): void {
+      logger?.warn(`[${logger.prefix}:aborted] yt-dlp metadata request aborted`)
+      resolveOnce({ ok: false, error: 'La preview fue cancelada porque se inicio otra solicitud.' })
+      killChild()
+    }
+
+    logger?.info(`[${logger.prefix}:spawn] yt-dlp ${sanitizeArgsForLog(args).join(' ')}`)
+
+    if (options.signal?.aborted) {
+      handleAbort()
+      return
+    }
+
+    options.signal?.addEventListener('abort', handleAbort, { once: true })
+
+    if (options.timeoutMs && options.timeoutMs > 0) {
+      timeout = setTimeout(() => {
+        logger?.warn(`[${logger.prefix}:timeout] yt-dlp metadata exceeded ${options.timeoutMs}ms`)
+        resolveOnce({
+          ok: false,
+          error: 'La preview tardo demasiado. Intenta otra vez o usa descarga rapida.'
+        })
+        killChild()
+      }, options.timeoutMs)
+    }
 
     child.stdout.setEncoding('utf8')
     child.stderr.setEncoding('utf8')
 
     child.stdout.on('data', (chunk: string) => {
       stdout += chunk
+      if (Buffer.byteLength(stdout, 'utf8') > maxStdoutBytes) {
+        logger?.warn(`[${logger.prefix}:stdout-limit] yt-dlp metadata stdout exceeded ${maxStdoutBytes} bytes`)
+        resolveOnce({
+          ok: false,
+          error: 'La preview devolvio demasiados datos. Intenta con otra URL.'
+        })
+        killChild()
+      }
     })
 
     child.stderr.on('data', (chunk: string) => {
@@ -72,13 +145,17 @@ export function runYtDlpForJson(
     child.on('error', (error) => {
       const message = getSpawnErrorMessage(error)
       logger?.error(`[${logger.prefix}:spawn-error] ${message}`)
-      resolve({ ok: false, error: message })
+      resolveOnce({ ok: false, error: message })
     })
 
     child.on('close', (code) => {
+      if (isResolved) {
+        return
+      }
+
       if (code === 0) {
         logger?.info(`[${logger.prefix}:exit] yt-dlp completed with code 0`)
-        resolve({ ok: true, stdout })
+        resolveOnce({ ok: true, stdout })
         return
       }
 
@@ -87,7 +164,7 @@ export function runYtDlpForJson(
           `yt-dlp termino con codigo ${code ?? 'desconocido'}.`
       )
       logger?.error(`[${logger.prefix}:exit] yt-dlp failed with code ${code ?? 'unknown'}: ${error}`)
-      resolve({
+      resolveOnce({
         ok: false,
         error
       })

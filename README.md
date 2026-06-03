@@ -47,7 +47,7 @@ If you only want to use the app, you do not need Node.js or development tools.
 2. Run the installer:
 
 ```text
-dist/WhoDownloads-Setup-1.0.1.exe
+dist/WhoDownloads-Setup-1.1.0.exe
 ```
 
 3. Follow the installer steps.

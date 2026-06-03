@@ -71,6 +71,8 @@ describe('previewVideo', () => {
   beforeEach(() => {
     vi.mocked(fetchVideoMetadata).mockReset()
     vi.mocked(getYtDlpCookieArgs).mockResolvedValue([])
+    vi.mocked(access).mockReset()
+    vi.mocked(access).mockResolvedValue(undefined)
   })
 
   it('validates URL before calling yt-dlp metadata fetch', async () => {
@@ -95,10 +97,13 @@ describe('previewVideo', () => {
     const result = await previewVideo(createAppStub(), 'https://youtu.be/abc')
 
     expect(result.ok).toBe(true)
-    expect(fetchVideoMetadata).toHaveBeenCalledWith('C:\\bin\\yt-dlp.exe', 'https://youtu.be/abc', [], [
-      '--js-runtimes',
-      'node:C:\\bin\\node\\node.exe'
-    ])
+    expect(fetchVideoMetadata).toHaveBeenCalledWith(
+      'C:\\bin\\yt-dlp.exe',
+      'https://youtu.be/abc',
+      [],
+      ['--js-runtimes', 'node:C:\\bin\\node\\node.exe'],
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    )
   })
 
   it('passes embedded YouTube cookies to metadata fetches', async () => {
@@ -120,8 +125,56 @@ describe('previewVideo', () => {
       'C:\\bin\\yt-dlp.exe',
       'https://youtu.be/abc',
       ['--cookies', 'C:\\UserData\\cookies.txt'],
-      ['--js-runtimes', 'node:C:\\bin\\node\\node.exe']
+      ['--js-runtimes', 'node:C:\\bin\\node\\node.exe'],
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
     )
+  })
+
+  it('fails preview before calling yt-dlp metadata when node.exe is inaccessible', async () => {
+    vi.mocked(access).mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('access denied'))
+
+    const result = await previewVideo(createAppStub(), 'https://youtu.be/abc')
+
+    expect(result.ok).toBe(false)
+    expect(result.ok === false ? result.error : '').toContain('No se pudo acceder a node.exe')
+    expect(fetchVideoMetadata).not.toHaveBeenCalled()
+  })
+
+  it('aborts the previous preview when a new preview starts', async () => {
+    const resolvers: Array<(result: Awaited<ReturnType<typeof fetchVideoMetadata>>) => void> = []
+    vi.mocked(fetchVideoMetadata).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvers.push(resolve)
+        })
+    )
+
+    const first = previewVideo(createAppStub(), 'https://youtu.be/first')
+    for (let attempt = 0; attempt < 10 && vi.mocked(fetchVideoMetadata).mock.calls.length < 1; attempt += 1) {
+      await Promise.resolve()
+    }
+    const firstSignal = vi.mocked(fetchVideoMetadata).mock.calls[0][4]?.signal
+    const second = previewVideo(createAppStub(), 'https://youtu.be/second')
+    for (let attempt = 0; attempt < 10 && vi.mocked(fetchVideoMetadata).mock.calls.length < 2; attempt += 1) {
+      await Promise.resolve()
+    }
+
+    expect(firstSignal?.aborted).toBe(true)
+
+    resolvers[0]({ ok: false, error: 'aborted' })
+    resolvers[1]({
+      ok: true,
+      metadata: {
+        title: 'Title',
+        artist: 'Channel',
+        year: '',
+        authorUrl: 'https://youtu.be/second',
+        url: 'https://youtu.be/second'
+      }
+    })
+
+    await expect(first).resolves.toEqual({ ok: false, error: 'aborted' })
+    await expect(second).resolves.toMatchObject({ ok: true })
   })
 })
 

@@ -1,6 +1,8 @@
 import type { MetadataResult } from '../../shared/downloadTypes'
-import { runYtDlpForJson } from './ytdlpService'
+import { runYtDlpForJson, type YtDlpJsonOptions } from './ytdlpService'
 import { isDetailedLoggingEnabled } from '../utils/cliArgs'
+
+const PREVIEW_TIMEOUT_MS = 25_000
 
 function getStringField(value: unknown): string {
   return typeof value === 'string' ? value : ''
@@ -43,7 +45,8 @@ export async function fetchVideoMetadata(
   ytDlpPath: string,
   cleanUrl: string,
   authArgs: string[] = [],
-  runtimeArgs: string[] = []
+  runtimeArgs: string[] = [],
+  options: YtDlpJsonOptions = {}
 ): Promise<MetadataResult> {
   if (isDetailedLoggingEnabled()) {
     console.info(
@@ -56,21 +59,29 @@ export async function fetchVideoMetadata(
     )
   }
 
-  const result = await runYtDlpForJson(ytDlpPath, [
-    '--dump-single-json',
-    '--skip-download',
-    '--no-playlist',
-    ...runtimeArgs,
-    ...authArgs,
-    cleanUrl
-  ], isDetailedLoggingEnabled()
-    ? {
-        prefix: 'preview',
-        info: (message) => console.info(message),
-        warn: (message) => console.warn(message),
-        error: (message) => console.error(message)
-      }
-    : undefined)
+  const result = await runYtDlpForJson(
+    ytDlpPath,
+    [
+      '--dump-single-json',
+      '--skip-download',
+      '--no-playlist',
+      ...runtimeArgs,
+      ...authArgs,
+      cleanUrl
+    ],
+    isDetailedLoggingEnabled()
+      ? {
+          prefix: 'preview',
+          info: (message) => console.info(message),
+          warn: (message) => console.warn(message),
+          error: (message) => console.error(message)
+        }
+      : undefined,
+    {
+      timeoutMs: PREVIEW_TIMEOUT_MS,
+      ...options
+    }
+  )
 
   if (!result.ok) {
     if (isDetailedLoggingEnabled()) {

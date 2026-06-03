@@ -1,16 +1,18 @@
-# Patch Notes - WhoDownloads v1.0.1
+# Patch Notes - WhoDownloads v1.1.0
 
-This patch addresses the "no compatible format found" error seen when downloading videos whose available YouTube streams do not match the previous strict MP4 selector.
+This patch fixes two reliability issues reported on Windows: missing YouTube formats for standard users and previews that could leave the app unresponsive.
 
 ## Fixed
 
-- A 720p/50fps source video can now be downloaded when the user selects 1080p; the app downloads the best available resolution up to 1080p.
-- MP4 downloads no longer depend only on direct H.264/AAC YouTube streams.
-- VP9/AV1 streams can be converted to compatible MP4 H.264/AAC output.
-- Console logs now include enough context to diagnose format selection and ffmpeg/yt-dlp failures.
+- yt-dlp now uses an embedded Node.js runtime to solve YouTube JavaScript challenges.
+- Standard Windows users no longer depend on a separately installed Node.js runtime.
+- Preview metadata loading now times out after 25 seconds instead of waiting forever.
+- Starting a new preview cancels the previous yt-dlp metadata process.
+- Old preview responses are ignored if the user has already changed the URL.
+- Preview logs are more informative with `--logs`, while cookie file paths stay hidden.
 
 ## Unchanged
 
+- MP4 fallback conversion remains available.
 - MP3 320 kbps remains supported.
 - Quick Download, playlist downloads, and the embedded YouTube browser keep the same workflow.
-- Cookie paths are not printed in logs.

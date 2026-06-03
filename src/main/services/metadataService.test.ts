@@ -44,7 +44,8 @@ describe('fetchVideoMetadata', () => {
         'node:C:\\bin\\node\\node.exe',
         'https://youtu.be/abc'
       ],
-      undefined
+      undefined,
+      expect.objectContaining({ timeoutMs: 25000 })
     )
   })
 
@@ -62,7 +63,8 @@ describe('fetchVideoMetadata', () => {
     expect(runYtDlpForJson).toHaveBeenCalledWith(
       'C:\\bin\\yt-dlp.exe',
       expect.any(Array),
-      expect.objectContaining({ prefix: 'preview' })
+      expect.objectContaining({ prefix: 'preview' }),
+      expect.objectContaining({ timeoutMs: 25000 })
     )
     expect(console.info).toHaveBeenCalledWith(expect.stringContaining('[preview:start]'))
     expect(console.info).toHaveBeenCalledWith(expect.stringContaining('node:C:\\\\bin\\\\node\\\\node.exe'))

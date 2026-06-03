@@ -92,6 +92,8 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
   const isDownloadingRef = useRef(false)
   const isBatchDownloadingRef = useRef(false)
+  const isPreviewLoadingRef = useRef(false)
+  const previewRequestIdRef = useRef(0)
 
   const cleanUrl = url.trim()
   const format = settings.defaultFormat
@@ -109,6 +111,10 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
   useEffect(() => {
     isBatchDownloadingRef.current = isBatchDownloading
   }, [isBatchDownloading])
+
+  useEffect(() => {
+    isPreviewLoadingRef.current = isPreviewLoading
+  }, [isPreviewLoading])
 
   useEffect(() => {
     return window.whoDownloads.onDownloadProgress((nextProgress) => {
@@ -131,6 +137,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
       !cleanUrl ||
       quickDownloadEnabled ||
       isDownloading ||
+      isPreviewLoadingRef.current ||
       metadataUrl === cleanUrl ||
       !looksLikeYouTubeUrl(cleanUrl)
     ) {
@@ -138,20 +145,27 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     }
 
     let isCanceled = false
+    const requestId = previewRequestIdRef.current + 1
+    previewRequestIdRef.current = requestId
     const previewTimer = window.setTimeout(() => {
       async function loadPreview(): Promise<void> {
         setIsPreviewLoading(true)
+        isPreviewLoadingRef.current = true
         setProgress({ status: 'starting', message: 'Cargando preview de metadata...' })
         console.log(`[renderer:preview] start ${cleanUrl}`)
 
-        const preview = await window.whoDownloads.previewVideo(cleanUrl)
+        const preview = await window.whoDownloads.previewVideo(cleanUrl).catch((error: unknown) => ({
+          ok: false as const,
+          error: error instanceof Error ? error.message : 'No se pudo cargar la preview.'
+        }))
         console.log(`[renderer:preview] result ${JSON.stringify({ ok: preview.ok })}`)
 
-        if (isCanceled) {
+        if (isCanceled || previewRequestIdRef.current !== requestId) {
           return
         }
 
         setIsPreviewLoading(false)
+        isPreviewLoadingRef.current = false
 
         if (!preview.ok) {
           setProgress({ status: 'failed', message: preview.error })
@@ -168,7 +182,11 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
 
     return () => {
       isCanceled = true
+      if (previewRequestIdRef.current === requestId) {
+        previewRequestIdRef.current += 1
+      }
       setIsPreviewLoading(false)
+      isPreviewLoadingRef.current = false
       window.clearTimeout(previewTimer)
     }
   }, [cleanUrl, quickDownloadEnabled, isDownloading, metadataUrl])
@@ -410,14 +428,25 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     }
 
     if (!hasCurrentPreview) {
+      const requestId = previewRequestIdRef.current + 1
+      previewRequestIdRef.current = requestId
       setIsPreviewLoading(true)
+      isPreviewLoadingRef.current = true
       setProgress({ status: 'starting', message: 'Cargando preview de metadata...' })
       console.log(`[renderer:preview] submit-start ${cleanUrl}`)
 
-      const preview = await window.whoDownloads.previewVideo(cleanUrl)
+      const preview = await window.whoDownloads.previewVideo(cleanUrl).catch((error: unknown) => ({
+        ok: false as const,
+        error: error instanceof Error ? error.message : 'No se pudo cargar la preview.'
+      }))
       console.log(`[renderer:preview] submit-result ${JSON.stringify({ ok: preview.ok })}`)
 
+      if (previewRequestIdRef.current !== requestId) {
+        return
+      }
+
       setIsPreviewLoading(false)
+      isPreviewLoadingRef.current = false
 
       if (!preview.ok) {
         setProgress({ status: 'failed', message: preview.error })
