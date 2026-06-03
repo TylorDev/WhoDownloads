@@ -11,10 +11,17 @@ import type {
 import { openDirectoryInShell, revealFileInFolder } from './services/fileRevealService'
 import { loadSettings, saveSettings } from './services/settingsService'
 import { getYtDlpCookieArgs } from './services/youtubeCookies'
+import { isDetailedLoggingEnabled } from './utils/cliArgs'
 import { isDownloadInput } from './utils/validation'
 import { getWindowsBinaryPath } from './utils/paths'
 
 let handlersRegistered = false
+
+function logIpc(message: string): void {
+  if (isDetailedLoggingEnabled()) {
+    console.info(message)
+  }
+}
 
 export function registerIpcHandlers(_mainWindow: BrowserWindow): void {
   if (handlersRegistered) {
@@ -25,34 +32,67 @@ export function registerIpcHandlers(_mainWindow: BrowserWindow): void {
 
   ipcMain.handle('preview-video', async (_event, url: unknown) => {
     if (typeof url !== 'string') {
-      return { ok: false, error: 'URL inválida.' } satisfies MetadataResult
+      logIpc(`[ipc:preview-video] ${JSON.stringify({ ok: false, reason: 'invalid-url-type' })}`)
+      return { ok: false, error: 'URL invÃ¡lida.' } satisfies MetadataResult
     }
 
+    logIpc(`[ipc:preview-video] ${JSON.stringify({ url: url.trim(), phase: 'start' })}`)
     const { previewVideo } = await import('./services/downloadService')
-    return previewVideo(app, url)
+    const result = await previewVideo(app, url)
+    logIpc(`[ipc:preview-video] ${JSON.stringify({ url: url.trim(), ok: result.ok })}`)
+    return result
   })
 
   ipcMain.handle('download-video', async (event, input: unknown) => {
     if (!isDownloadInput(input)) {
-      return { ok: false, error: 'Opciones de descarga inválidas.' } satisfies DownloadResult
+      logIpc(`[ipc:download-video] ${JSON.stringify({ ok: false, reason: 'invalid-input' })}`)
+      return { ok: false, error: 'Opciones de descarga invÃ¡lidas.' } satisfies DownloadResult
     }
 
+    logIpc(
+      `[ipc:download-video] ${JSON.stringify({
+        phase: 'start',
+        url: input.url.trim(),
+        format: input.format,
+        quality: input.quality,
+        taskId: input.taskId
+      })}`
+    )
     const [{ downloadVideo }, settings] = await Promise.all([
       import('./services/downloadService'),
       loadSettings(app)
     ])
 
-    return downloadVideo(app, input, event.sender, settings)
+    const result = await downloadVideo(app, input, event.sender, settings)
+    logIpc(
+      `[ipc:download-video] ${JSON.stringify({
+        ok: result.ok,
+        format: input.format,
+        quality: input.quality,
+        taskId: input.taskId
+      })}`
+    )
+    return result
   })
 
   ipcMain.handle('fetch-playlist', async (_event, url: unknown) => {
     if (typeof url !== 'string') {
-      return { ok: false, error: 'URL inválida.' } satisfies PlaylistResult
+      logIpc(`[ipc:fetch-playlist] ${JSON.stringify({ ok: false, reason: 'invalid-url-type' })}`)
+      return { ok: false, error: 'URL invÃ¡lida.' } satisfies PlaylistResult
     }
 
+    logIpc(`[ipc:fetch-playlist] ${JSON.stringify({ url: url.trim(), phase: 'start' })}`)
     const { fetchPlaylistEntries } = await import('./services/playlistService')
     const authArgs = await getYtDlpCookieArgs(app)
-    return fetchPlaylistEntries(getWindowsBinaryPath(app, 'yt-dlp'), url.trim(), authArgs)
+    const result = await fetchPlaylistEntries(getWindowsBinaryPath(app, 'yt-dlp'), url.trim(), authArgs)
+    logIpc(
+      `[ipc:fetch-playlist] ${JSON.stringify({
+        url: url.trim(),
+        ok: result.ok,
+        entries: result.ok ? result.entries.length : undefined
+      })}`
+    )
+    return result
   })
 
   ipcMain.handle('get-youtube-webview-preload-path', () =>

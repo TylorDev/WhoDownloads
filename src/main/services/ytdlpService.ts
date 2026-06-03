@@ -16,6 +16,19 @@ export type YtDlpDownloadLogger = {
   error: (message: string) => void
 }
 
+export type YtDlpJsonLogger = {
+  prefix: string
+  info: (message: string) => void
+  warn: (message: string) => void
+  error: (message: string) => void
+}
+
+type YtDlpCommandOutput = {
+  stdout: string
+  stderr: string
+  exitCode?: number | null
+}
+
 function getSpawnErrorMessage(error: Error): string {
   return error.message.includes('ENOENT')
     ? 'No se encontro resources/bin/win/yt-dlp.exe. Agrega el binario y vuelve a intentar.'
@@ -28,8 +41,62 @@ export function normalizeYtDlpErrorMessage(message: string): string {
     : message
 }
 
-export function runYtDlpForJson(ytDlpPath: string, args: string[]): Promise<YtDlpMetadataResult> {
+export function runYtDlpForJson(
+  ytDlpPath: string,
+  args: string[],
+  logger?: YtDlpJsonLogger
+): Promise<YtDlpMetadataResult> {
   return new Promise<YtDlpMetadataResult>((resolve) => {
+    const child = spawn(ytDlpPath, args, {
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'pipe']
+    })
+
+    let stdout = ''
+    let stderr = ''
+
+    child.stdout.setEncoding('utf8')
+    child.stderr.setEncoding('utf8')
+
+    child.stdout.on('data', (chunk: string) => {
+      stdout += chunk
+    })
+
+    child.stderr.on('data', (chunk: string) => {
+      stderr += chunk
+      for (const line of splitProgressLines(chunk)) {
+        logger?.warn(`[${logger.prefix}:stderr] ${line}`)
+      }
+    })
+
+    child.on('error', (error) => {
+      const message = getSpawnErrorMessage(error)
+      logger?.error(`[${logger.prefix}:spawn-error] ${message}`)
+      resolve({ ok: false, error: message })
+    })
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        logger?.info(`[${logger.prefix}:exit] yt-dlp completed with code 0`)
+        resolve({ ok: true, stdout })
+        return
+      }
+
+      const error = normalizeYtDlpErrorMessage(
+        stderr.trim().split(/\r?\n/).at(-1) ??
+          `yt-dlp termino con codigo ${code ?? 'desconocido'}.`
+      )
+      logger?.error(`[${logger.prefix}:exit] yt-dlp failed with code ${code ?? 'unknown'}: ${error}`)
+      resolve({
+        ok: false,
+        error
+      })
+    })
+  })
+}
+
+function runYtDlpCommand(ytDlpPath: string, args: string[]): Promise<YtDlpCommandOutput> {
+  return new Promise<YtDlpCommandOutput>((resolve) => {
     const child = spawn(ytDlpPath, args, {
       windowsHide: true,
       stdio: ['ignore', 'pipe', 'pipe']
@@ -50,24 +117,37 @@ export function runYtDlpForJson(ytDlpPath: string, args: string[]): Promise<YtDl
     })
 
     child.on('error', (error) => {
-      resolve({ ok: false, error: getSpawnErrorMessage(error) })
+      resolve({ stdout, stderr: stderr || getSpawnErrorMessage(error) })
     })
 
     child.on('close', (code) => {
-      if (code === 0) {
-        resolve({ ok: true, stdout })
-        return
-      }
-
-      resolve({
-        ok: false,
-        error: normalizeYtDlpErrorMessage(
-          stderr.trim().split(/\r?\n/).at(-1) ??
-            `yt-dlp termino con codigo ${code ?? 'desconocido'}.`
-        )
-      })
+      resolve({ stdout, stderr, exitCode: code })
     })
   })
+}
+
+function logCommandOutput(logger: YtDlpDownloadLogger, prefix: string, output: YtDlpCommandOutput): void {
+  logger.info(`${prefix}:exitCode=${output.exitCode ?? 'unknown'}`)
+
+  for (const line of splitProgressLines(output.stdout)) {
+    logger.info(`${prefix}:stdout ${line}`)
+  }
+
+  for (const line of splitProgressLines(output.stderr)) {
+    logger.warn(`${prefix}:stderr ${line}`)
+  }
+}
+
+export async function runYtDlpDiagnostics(
+  ytDlpPath: string,
+  url: string,
+  logger: YtDlpDownloadLogger
+): Promise<void> {
+  const version = await runYtDlpCommand(ytDlpPath, ['--version'])
+  logCommandOutput(logger, '[download:yt-dlp-version]', version)
+
+  const formats = await runYtDlpCommand(ytDlpPath, ['--no-playlist', '--list-formats', url])
+  logCommandOutput(logger, '[download:list-formats]', formats)
 }
 
 export function runYtDlpDownload(

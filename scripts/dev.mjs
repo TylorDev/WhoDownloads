@@ -5,11 +5,16 @@ const env = { ...process.env }
 const remoteDebuggingPortArg = process.argv.find((arg) =>
   arg.startsWith('--remote-debugging-port=')
 )
+const logsEnabled = process.argv.includes('--logs')
 
 if (remoteDebuggingPortArg) {
   env.ELECTRON_REMOTE_DEBUGGING_PORT = remoteDebuggingPortArg.split('=')[1] || '9222'
 } else {
   env.ELECTRON_REMOTE_DEBUGGING_PORT ??= '9222'
+}
+
+if (logsEnabled) {
+  env.WHODOWNLOADS_LOGS = '1'
 }
 
 const electronViteBin = join(

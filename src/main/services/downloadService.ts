@@ -1,5 +1,6 @@
 import type { App, WebContents } from 'electron'
-import { mkdir } from 'node:fs/promises'
+import { constants } from 'node:fs'
+import { access, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import type {
   AppSettings,
@@ -10,17 +11,26 @@ import type {
 } from '../../shared/downloadTypes'
 import { getYtDlpArgs } from './formatSelectors'
 import { fetchVideoMetadata } from './metadataService'
-import { runYtDlpDownload, type YtDlpDownloadLogger } from './ytdlpService'
+import { runYtDlpDiagnostics, runYtDlpDownload, type YtDlpDownloadLogger } from './ytdlpService'
 import { getYtDlpCookieArgs } from './youtubeCookies'
 import { getDownloadOutputDirectory, getWindowsBinaryPath } from '../utils/paths'
+import { isDetailedLoggingEnabled } from '../utils/cliArgs'
 import { isYouTubeUrl } from '../utils/validation'
 
 const MAX_PARALLEL_DOWNLOADS = 4
 let activeDownloads = 0
 
 const downloadLogger: YtDlpDownloadLogger = {
-  info: (message) => console.info(message),
-  warn: (message) => console.warn(message),
+  info: (message) => {
+    if (isDetailedLoggingEnabled()) {
+      console.info(message)
+    }
+  },
+  warn: (message) => {
+    if (isDetailedLoggingEnabled()) {
+      console.warn(message)
+    }
+  },
   error: (message) => console.error(message)
 }
 
@@ -54,6 +64,10 @@ function getDownloadFailureMessage(input: DownloadInput, stderr: string, fallbac
     : fallbackError ?? ''
 }
 
+function isFormatUnavailable(stderr: string): boolean {
+  return /Requested format is not available|No video formats found/i.test(stderr)
+}
+
 function getArgValue(args: string[], name: string): string | undefined {
   const index = args.indexOf(name)
 
@@ -61,6 +75,10 @@ function getArgValue(args: string[], name: string): string | undefined {
 }
 
 function logDownloadStart(input: DownloadInput, args: string[], outputDirectory: string, authArgs: string[]): void {
+  if (!isDetailedLoggingEnabled()) {
+    return
+  }
+
   const selector = getArgValue(args, '-f') ?? 'unknown'
   const usesCookies = authArgs.includes('--cookies')
   const mode =
@@ -80,6 +98,89 @@ function logDownloadStart(input: DownloadInput, args: string[], outputDirectory:
     })}`
   )
   console.info(`[download:selector] ${selector}`)
+}
+
+function logDownloadRetry(input: DownloadInput, args: string[]): void {
+  if (!isDetailedLoggingEnabled()) {
+    return
+  }
+
+  const selector = getArgValue(args, '-f') ?? 'unknown'
+
+  console.info(
+    `[download:retry] ${JSON.stringify({
+      taskId: input.taskId,
+      url: input.url.trim(),
+      format: input.format,
+      quality: input.quality,
+      reason: 'format unavailable',
+      selector
+    })}`
+  )
+}
+
+async function checkBinaryAccess(name: string, filePath: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await access(filePath, constants.R_OK | constants.X_OK)
+    return { ok: true }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+
+    return {
+      ok: false,
+      error: `No se pudo acceder a ${name}. Ruta: ${filePath}. ${message}`
+    }
+  }
+}
+
+function logDownloadPreflight(
+  app: App,
+  ytDlpPath: string,
+  ffmpegPath: string,
+  outputDirectory: string,
+  authArgs: string[]
+): void {
+  if (!isDetailedLoggingEnabled()) {
+    return
+  }
+
+  console.info(
+    `[download:preflight] ${JSON.stringify({
+      isPackaged: app.isPackaged,
+      resourcesPath: process.resourcesPath,
+      userData: app.getPath('userData'),
+      downloads: app.getPath('downloads'),
+      outputDirectory,
+      ytDlpPath,
+      ffmpegPath,
+      usesCookies: authArgs.includes('--cookies'),
+      username: process.env['USERNAME'] || process.env['USER'] || ''
+    })}`
+  )
+}
+
+async function runDownloadPreflight(
+  app: App,
+  ytDlpPath: string,
+  ffmpegPath: string,
+  outputDirectory: string,
+  authArgs: string[]
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  logDownloadPreflight(app, ytDlpPath, ffmpegPath, outputDirectory, authArgs)
+
+  const ytDlpAccess = await checkBinaryAccess('yt-dlp.exe', ytDlpPath)
+  if (!ytDlpAccess.ok) {
+    console.error(`[download:preflight] ${ytDlpAccess.error}`)
+    return ytDlpAccess
+  }
+
+  const ffmpegAccess = await checkBinaryAccess('ffmpeg.exe', ffmpegPath)
+  if (!ffmpegAccess.ok) {
+    console.error(`[download:preflight] ${ffmpegAccess.error}`)
+    return ffmpegAccess
+  }
+
+  return { ok: true }
 }
 
 export async function previewVideo(app: App, url: string): Promise<MetadataResult> {
@@ -130,8 +231,14 @@ export async function downloadVideo(
     const outputTemplate = join(outputDirectory, '%(title).180B.%(ext)s')
     const authArgs = await getYtDlpCookieArgs(app)
     const args = getYtDlpArgs({ ...input, url: cleanUrl } as DownloadInput, ffmpegPath, outputTemplate, authArgs)
+    const preflight = await runDownloadPreflight(app, ytDlpPath, ffmpegPath, outputDirectory, authArgs)
+    if (!preflight.ok) {
+      emitProgress(sender, withTaskId(input, { status: 'failed', message: preflight.error }))
+      return { ok: false, error: preflight.error }
+    }
+
     logDownloadStart({ ...input, url: cleanUrl } as DownloadInput, args, outputDirectory, authArgs)
-    const result = await runYtDlpDownload(
+    let result = await runYtDlpDownload(
       ytDlpPath,
       args,
       input.format,
@@ -140,6 +247,30 @@ export async function downloadVideo(
       },
       downloadLogger
     )
+
+    if (!result.ok && input.format === 'mp4' && isFormatUnavailable(result.stderr)) {
+      const fallbackArgs = getYtDlpArgs(
+        { ...input, url: cleanUrl } as DownloadInput,
+        ffmpegPath,
+        outputTemplate,
+        authArgs,
+        { useMp4FallbackSelector: true }
+      )
+      logDownloadRetry({ ...input, url: cleanUrl } as DownloadInput, fallbackArgs)
+      result = await runYtDlpDownload(
+        ytDlpPath,
+        fallbackArgs,
+        input.format,
+        (progress) => {
+          emitProgress(sender, withTaskId(input, progress))
+        },
+        downloadLogger
+      )
+    }
+
+    if (!result.ok && input.format === 'mp4' && isFormatUnavailable(result.stderr) && isDetailedLoggingEnabled()) {
+      await runYtDlpDiagnostics(ytDlpPath, cleanUrl, downloadLogger)
+    }
 
     if (result.ok) {
       emitProgress(

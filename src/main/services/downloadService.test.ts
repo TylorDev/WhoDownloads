@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { App, WebContents } from 'electron'
+import { access } from 'node:fs/promises'
 import { downloadVideo, previewVideo } from './downloadService'
-import { runYtDlpDownload } from './ytdlpService'
+import { runYtDlpDiagnostics, runYtDlpDownload } from './ytdlpService'
 import { fetchVideoMetadata } from './metadataService'
 import { getYtDlpCookieArgs } from './youtubeCookies'
 
 vi.mock('node:fs/promises', () => ({
+  access: vi.fn(() => Promise.resolve()),
   mkdir: vi.fn(() => Promise.resolve())
 }))
 
@@ -28,11 +30,25 @@ vi.mock('./metadataService', async (importOriginal) => {
 })
 
 vi.mock('./ytdlpService', () => ({
+  runYtDlpDiagnostics: vi.fn(() => Promise.resolve()),
   runYtDlpDownload: vi.fn()
 }))
 
 function createAppStub(): App {
-  return {} as App
+  return {
+    isPackaged: true,
+    getPath: vi.fn((name: string) => {
+      if (name === 'userData') {
+        return 'C:\\UserData'
+      }
+
+      if (name === 'downloads') {
+        return 'C:\\Downloads'
+      }
+
+      return `C:\\${name}`
+    })
+  } as unknown as App
 }
 
 function createSenderStub(): WebContents & { sent: Array<[string, unknown]> } {
@@ -100,9 +116,16 @@ describe('previewVideo', () => {
 })
 
 describe('downloadVideo', () => {
+  const originalLogsEnv = process.env['WHODOWNLOADS_LOGS']
+
   beforeEach(() => {
+    vi.mocked(access).mockReset()
+    vi.mocked(access).mockResolvedValue(undefined)
+    vi.mocked(runYtDlpDiagnostics).mockReset()
+    vi.mocked(runYtDlpDiagnostics).mockResolvedValue(undefined)
     vi.mocked(runYtDlpDownload).mockReset()
     vi.mocked(getYtDlpCookieArgs).mockResolvedValue([])
+    process.env['WHODOWNLOADS_LOGS'] = '1'
     vi.spyOn(console, 'info').mockImplementation(() => undefined)
     vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
@@ -110,6 +133,11 @@ describe('downloadVideo', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
+    if (originalLogsEnv === undefined) {
+      delete process.env['WHODOWNLOADS_LOGS']
+    } else {
+      process.env['WHODOWNLOADS_LOGS'] = originalLogsEnv
+    }
   })
 
   it('emits starting and completed progress for successful downloads', async () => {
@@ -135,6 +163,60 @@ describe('downloadVideo', () => {
         }
       ]
     ])
+  })
+
+  it('checks binary access before starting the download', async () => {
+    const sender = createSenderStub()
+    vi.mocked(runYtDlpDownload).mockResolvedValue({ ok: true, filePath: 'C:\\Downloads\\song.mp3' })
+
+    await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/abc', format: 'mp3', quality: '192' },
+      sender
+    )
+
+    expect(access).toHaveBeenCalledWith('C:\\bin\\yt-dlp.exe', expect.any(Number))
+    expect(access).toHaveBeenCalledWith('C:\\bin\\ffmpeg.exe', expect.any(Number))
+    expect(console.info).toHaveBeenCalledWith(expect.stringContaining('[download:preflight]'))
+  })
+
+  it('fails before calling yt-dlp when yt-dlp.exe is inaccessible', async () => {
+    const sender = createSenderStub()
+    vi.mocked(access).mockRejectedValueOnce(new Error('access denied'))
+
+    const result = await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/abc', format: 'mp4', quality: '1080' },
+      sender
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.ok === false ? result.error : '').toContain('No se pudo acceder a yt-dlp.exe')
+    expect(runYtDlpDownload).not.toHaveBeenCalled()
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('[download:preflight]'))
+    expect(sender.sent.at(-1)).toEqual([
+      'download-progress',
+      expect.objectContaining({
+        status: 'failed',
+        message: expect.stringContaining('No se pudo acceder a yt-dlp.exe')
+      })
+    ])
+  })
+
+  it('fails before calling yt-dlp when ffmpeg.exe is inaccessible', async () => {
+    const sender = createSenderStub()
+    vi.mocked(access).mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('access denied'))
+
+    const result = await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/abc', format: 'mp4', quality: '1080' },
+      sender
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.ok === false ? result.error : '').toContain('No se pudo acceder a ffmpeg.exe')
+    expect(runYtDlpDownload).not.toHaveBeenCalled()
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('[download:preflight]'))
   })
 
   it('emits taskId with download progress when provided', async () => {
@@ -233,6 +315,26 @@ describe('downloadVideo', () => {
     })
   })
 
+  it('runs yt-dlp diagnostics with --logs when MP4 stays format-unavailable after retry', async () => {
+    const sender = createSenderStub()
+    vi.mocked(runYtDlpDownload).mockResolvedValue({
+      ok: false,
+      stderr: 'ERROR: Requested format is not available'
+    })
+
+    await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/abc', format: 'mp4', quality: '1080' },
+      sender
+    )
+
+    expect(runYtDlpDiagnostics).toHaveBeenCalledWith(
+      'C:\\bin\\yt-dlp.exe',
+      'https://youtu.be/abc',
+      expect.any(Object)
+    )
+  })
+
   it('logs download context, selector, and final failure details', async () => {
     const sender = createSenderStub()
     vi.mocked(runYtDlpDownload).mockResolvedValue({
@@ -252,6 +354,80 @@ describe('downloadVideo', () => {
     expect(console.info).toHaveBeenCalledWith(expect.stringContaining('"usesCookies":false'))
     expect(console.info).toHaveBeenCalledWith(expect.stringContaining('[download:selector]'))
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('[download:failed]'))
+  })
+
+  it('keeps detailed download logs quiet without --logs while preserving critical failure logs', async () => {
+    delete process.env['WHODOWNLOADS_LOGS']
+    const sender = createSenderStub()
+    vi.mocked(runYtDlpDownload).mockResolvedValue({
+      ok: false,
+      stderr: 'ERROR: failed',
+      error: 'failed'
+    })
+
+    await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/abc', format: 'mp4', quality: '1080' },
+      sender
+    )
+
+    expect(console.info).not.toHaveBeenCalledWith(expect.stringContaining('[download:start]'))
+    expect(console.info).not.toHaveBeenCalledWith(expect.stringContaining('[download:selector]'))
+    expect(console.warn).not.toHaveBeenCalled()
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('[download:failed]'))
+  })
+
+  it('does not run list-formats diagnostics without --logs', async () => {
+    delete process.env['WHODOWNLOADS_LOGS']
+    const sender = createSenderStub()
+    vi.mocked(runYtDlpDownload).mockResolvedValue({
+      ok: false,
+      stderr: 'ERROR: Requested format is not available'
+    })
+
+    await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/abc', format: 'mp4', quality: '1080' },
+      sender
+    )
+
+    expect(runYtDlpDiagnostics).not.toHaveBeenCalled()
+  })
+
+  it('retries MP4 once with the fallback selector when the primary selector is unavailable', async () => {
+    const sender = createSenderStub()
+    vi.mocked(runYtDlpDownload)
+      .mockResolvedValueOnce({
+        ok: false,
+        stderr: 'ERROR: Requested format is not available'
+      })
+      .mockResolvedValueOnce({ ok: true, filePath: 'C:\\Downloads\\video.mp4' })
+
+    const result = await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/abc', format: 'mp4', quality: '1080' },
+      sender
+    )
+
+    const firstArgs = vi.mocked(runYtDlpDownload).mock.calls[0][1]
+    const retryArgs = vi.mocked(runYtDlpDownload).mock.calls[1][1]
+
+    expect(result).toEqual({ ok: true, filePath: 'C:\\Downloads\\video.mp4' })
+    expect(runYtDlpDownload).toHaveBeenCalledTimes(2)
+    expect(firstArgs[firstArgs.indexOf('-f') + 1]).toContain('[vcodec^=avc1]')
+    expect(retryArgs[retryArgs.indexOf('-f') + 1]).toBe(
+      'bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b'
+    )
+    expect(console.info).toHaveBeenCalledWith(expect.stringContaining('[download:retry]'))
+    expect(sender.sent.at(-1)).toEqual([
+      'download-progress',
+      {
+        status: 'completed',
+        percent: 100,
+        filePath: 'C:\\Downloads\\video.mp4',
+        message: 'Descargado: C:\\Downloads\\video.mp4'
+      }
+    ])
   })
 
   it('passes an MP4 selector that can fall back from requested 1080p to lower available formats', async () => {
@@ -285,6 +461,24 @@ describe('downloadVideo', () => {
     )
 
     expect(result).toEqual({ ok: false, error: 'No se pudo extraer audio MP3 para esta URL.' })
+  })
+
+  it('does not use the MP4 retry path for MP3 format errors', async () => {
+    const sender = createSenderStub()
+    vi.mocked(runYtDlpDownload).mockResolvedValue({
+      ok: false,
+      stderr: 'ERROR: Requested format is not available'
+    })
+
+    await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/abc', format: 'mp3', quality: '320' },
+      sender
+    )
+
+    expect(runYtDlpDownload).toHaveBeenCalledTimes(1)
+    expect(console.info).not.toHaveBeenCalledWith(expect.stringContaining('[download:retry]'))
+    expect(runYtDlpDiagnostics).not.toHaveBeenCalled()
   })
 
   it('returns a session guidance message for YouTube anti-bot errors', async () => {
@@ -325,8 +519,9 @@ describe('downloadVideo', () => {
         senders[index]
       )
     )
-    await Promise.resolve()
-    await Promise.resolve()
+    for (let attempt = 0; attempt < 10 && resolvers.length < 4; attempt += 1) {
+      await Promise.resolve()
+    }
 
     const fifth = await downloadVideo(
       createAppStub(),

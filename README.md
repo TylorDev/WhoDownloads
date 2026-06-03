@@ -111,6 +111,22 @@ npm run dev:debug
 
 This enables Electron's remote debugging port.
 
+### Show Console Logs
+
+Run the app from cmd or PowerShell with `--logs` to print detailed startup, renderer, and download logs in that terminal:
+
+```text
+WhoDownloads.exe --logs
+```
+
+In development:
+
+```bash
+npm run dev -- --logs
+```
+
+Opening the app from a shortcut or double-click may not show a console even when `--logs` is present.
+
 ## Useful Commands
 
 Run tests:

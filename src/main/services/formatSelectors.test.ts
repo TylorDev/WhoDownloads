@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { getMp3AudioQuality, getMp4FormatSelector, getYtDlpArgs } from './formatSelectors'
+import {
+  getMp3AudioQuality,
+  getMp4FallbackFormatSelector,
+  getMp4FormatSelector,
+  getYtDlpArgs
+} from './formatSelectors'
 
 describe('getMp4FormatSelector', () => {
   it('uses H.264/AAC compatible MP4 filters for auto quality', () => {
@@ -16,6 +21,18 @@ describe('getMp4FormatSelector', () => {
 
     expect(selector).toContain('[height<=1080]')
     expect(selector).toContain('/bv*[height<=1080]+ba/b[height<=1080]')
+  })
+})
+
+describe('getMp4FallbackFormatSelector', () => {
+  it('tries best available video and audio within explicit quality before general fallback', () => {
+    const selector = getMp4FallbackFormatSelector('1080')
+
+    expect(selector).toBe('bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b')
+  })
+
+  it('uses general best available formats for auto quality', () => {
+    expect(getMp4FallbackFormatSelector('auto')).toBe('bv*+ba/b')
   })
 })
 
@@ -83,5 +100,18 @@ describe('getYtDlpArgs', () => {
     expect(args).toContain('--cookies')
     expect(args).toContain('C:\\UserData\\cookies.txt')
     expect(args.at(-1)).toBe('https://youtu.be/private')
+  })
+
+  it('can build MP4 args with the fallback selector', () => {
+    const args = getYtDlpArgs(
+      { url: 'https://youtu.be/video', format: 'mp4', quality: '1080' },
+      'C:\\bin\\ffmpeg.exe',
+      'C:\\out\\%(title)s.%(ext)s',
+      [],
+      { useMp4FallbackSelector: true }
+    )
+
+    expect(args[args.indexOf('-f') + 1]).toBe('bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b')
+    expect(args).toContain('--recode-video')
   })
 })

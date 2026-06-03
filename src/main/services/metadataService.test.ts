@@ -1,5 +1,61 @@
-import { describe, expect, it } from 'vitest'
-import { mapMetadataPreview } from './metadataService'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fetchVideoMetadata, mapMetadataPreview } from './metadataService'
+import { runYtDlpForJson } from './ytdlpService'
+
+vi.mock('./ytdlpService', () => ({
+  runYtDlpForJson: vi.fn()
+}))
+
+describe('fetchVideoMetadata', () => {
+  const originalLogsEnv = process.env['WHODOWNLOADS_LOGS']
+
+  beforeEach(() => {
+    vi.mocked(runYtDlpForJson).mockReset()
+    vi.mocked(runYtDlpForJson).mockResolvedValue({
+      ok: true,
+      stdout: JSON.stringify({ title: 'Song title', uploader: 'Channel name' })
+    })
+  })
+
+  afterEach(() => {
+    if (originalLogsEnv === undefined) {
+      delete process.env['WHODOWNLOADS_LOGS']
+    } else {
+      process.env['WHODOWNLOADS_LOGS'] = originalLogsEnv
+    }
+    vi.restoreAllMocks()
+  })
+
+  it('fetches metadata without a logger by default', async () => {
+    await fetchVideoMetadata('C:\\bin\\yt-dlp.exe', 'https://youtu.be/abc')
+
+    expect(runYtDlpForJson).toHaveBeenCalledWith(
+      'C:\\bin\\yt-dlp.exe',
+      [
+        '--dump-single-json',
+        '--skip-download',
+        '--no-playlist',
+        'https://youtu.be/abc'
+      ],
+      undefined
+    )
+  })
+
+  it('passes a logger to yt-dlp and emits preview logs with --logs', async () => {
+    process.env['WHODOWNLOADS_LOGS'] = '1'
+    vi.spyOn(console, 'info').mockImplementation(() => undefined)
+
+    await fetchVideoMetadata('C:\\bin\\yt-dlp.exe', 'https://youtu.be/abc')
+
+    expect(runYtDlpForJson).toHaveBeenCalledWith(
+      'C:\\bin\\yt-dlp.exe',
+      expect.any(Array),
+      expect.objectContaining({ prefix: 'preview' })
+    )
+    expect(console.info).toHaveBeenCalledWith(expect.stringContaining('[preview:start]'))
+    expect(console.info).toHaveBeenCalledWith(expect.stringContaining('[preview:result]'))
+  })
+})
 
 describe('mapMetadataPreview', () => {
   it('maps yt-dlp JSON into preview metadata', () => {

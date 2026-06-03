@@ -11,6 +11,13 @@ export function getMp4FormatSelector(quality: Mp4Quality): string {
   return `bv*${compatibleVideoFilter}+ba${audioFilter}/${compatibleMuxedFilter}/${fallbackVideoFilter}+ba/${fallbackMuxedFilter}`
 }
 
+export function getMp4FallbackFormatSelector(quality: Mp4Quality): string {
+  const heightFilter = quality === 'auto' ? '' : `[height<=${quality}]`
+  const limitedFallback = quality === 'auto' ? '' : `bv*${heightFilter}+ba/b${heightFilter}/`
+
+  return `${limitedFallback}bv*+ba/b`
+}
+
 export function getMp3AudioQuality(quality: Mp3Quality): string {
   return quality === 'auto' ? '0' : `${quality}K`
 }
@@ -19,7 +26,8 @@ export function getYtDlpArgs(
   input: DownloadInput,
   ffmpegPath: string,
   outputTemplate: string,
-  authArgs: string[] = []
+  authArgs: string[] = [],
+  options: { useMp4FallbackSelector?: boolean } = {}
 ): string[] {
   const commonArgs = [
     '--no-playlist',
@@ -71,7 +79,9 @@ export function getYtDlpArgs(
   return [
     ...commonArgs,
     '-f',
-    getMp4FormatSelector(input.quality),
+    options.useMp4FallbackSelector
+      ? getMp4FallbackFormatSelector(input.quality)
+      : getMp4FormatSelector(input.quality),
     '--merge-output-format',
     'mp4',
     '--recode-video',

@@ -1,23 +1,39 @@
 import { app, BrowserWindow, Menu } from 'electron'
 import { join } from 'node:path'
 import { registerIpcHandlers } from './ipc'
-import { forwardConsoleErrorsToTerminal } from './utils/consoleForwarder'
-import { getAppIconPath } from './utils/paths'
+import { forwardRendererConsoleToTerminal } from './utils/consoleForwarder'
+import { isDetailedLoggingEnabled } from './utils/cliArgs'
+import { getAppIconPath, getDownloadOutputDirectory, getWindowsBinaryPath } from './utils/paths'
+import { shouldLogStartupTimings } from './utils/startupLogging'
 
 const WINDOW_BACKGROUND_COLOR = '#050505'
 const WINDOW_SHOW_FALLBACK_MS = 2500
 const startupStartedAt = Date.now()
 
-function shouldLogStartupTimings(): boolean {
-  return !app.isPackaged || process.env['ELECTRON_STARTUP_TIMINGS'] === '1'
-}
-
 function logStartupTiming(mark: string): void {
-  if (!shouldLogStartupTimings()) {
+  if (!shouldLogStartupTimings(app)) {
     return
   }
 
   console.info(`[startup] ${mark}: ${Date.now() - startupStartedAt}ms`)
+}
+
+function logStartupEnvironment(): void {
+  if (!isDetailedLoggingEnabled()) {
+    return
+  }
+
+  console.info(
+    `[startup:environment] ${JSON.stringify({
+      isPackaged: app.isPackaged,
+      resourcesPath: process.resourcesPath,
+      userData: app.getPath('userData'),
+      downloads: getDownloadOutputDirectory(app),
+      ytDlpPath: getWindowsBinaryPath(app, 'yt-dlp'),
+      ffmpegPath: getWindowsBinaryPath(app, 'ffmpeg'),
+      username: process.env['USERNAME'] || process.env['USER'] || ''
+    })}`
+  )
 }
 
 function enableRemoteDebuggingForDevelopment(): void {
@@ -80,7 +96,7 @@ function createWindow(): void {
     logStartupTiming('did-finish-load')
     showMainWindow('did-finish-load')
 
-    if (shouldLogStartupTimings()) {
+    if (shouldLogStartupTimings(app)) {
       setTimeout(() => {
         if (mainWindow.isDestroyed()) {
           return
@@ -126,7 +142,9 @@ function createWindow(): void {
     })
   }
 
-  forwardConsoleErrorsToTerminal(mainWindow.webContents, 'renderer')
+  forwardRendererConsoleToTerminal(mainWindow.webContents, 'renderer', {
+    includeAllLevels: isDetailedLoggingEnabled()
+  })
   registerIpcHandlers(mainWindow)
 }
 
@@ -134,6 +152,7 @@ enableRemoteDebuggingForDevelopment()
 
 app.whenReady().then(() => {
   logStartupTiming('app:ready')
+  logStartupEnvironment()
   Menu.setApplicationMenu(null)
   createWindow()
 

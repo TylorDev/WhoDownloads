@@ -142,8 +142,10 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
       async function loadPreview(): Promise<void> {
         setIsPreviewLoading(true)
         setProgress({ status: 'starting', message: 'Cargando preview de metadata...' })
+        console.log(`[renderer:preview] start ${cleanUrl}`)
 
         const preview = await window.whoDownloads.previewVideo(cleanUrl)
+        console.log(`[renderer:preview] result ${JSON.stringify({ ok: preview.ok })}`)
 
         if (isCanceled) {
           return
@@ -219,8 +221,22 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     isDownloadingRef.current = true
     setIsDownloading(true)
     setProgress({ status: 'starting', message: 'Preparando descarga...' })
+    console.log(
+      `[renderer:download] start ${JSON.stringify({
+        url: taskInput.url,
+        format: taskInput.format,
+        quality: taskInput.quality,
+        taskId: taskInput.taskId
+      })}`
+    )
 
     const result = await window.whoDownloads.downloadVideo(taskInput)
+    console.log(
+      `[renderer:download] result ${JSON.stringify({
+        ok: result.ok,
+        taskId: taskInput.taskId
+      })}`
+    )
     setDownloadTasks((currentTasks) => applyTaskResult(currentTasks, taskInput.taskId, result))
 
     if (!result.ok) {
@@ -336,6 +352,12 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
         MAX_PARALLEL_BATCH_DOWNLOADS,
         async (input) => {
           const result = await window.whoDownloads.downloadVideo(input)
+          console.log(
+            `[renderer:download] batch-result ${JSON.stringify({
+              ok: result.ok,
+              taskId: input.taskId
+            })}`
+          )
           setDownloadTasks((currentTasks) => applyTaskResult(currentTasks, input.taskId, result))
 
           if (result.ok) {
@@ -390,8 +412,10 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     if (!hasCurrentPreview) {
       setIsPreviewLoading(true)
       setProgress({ status: 'starting', message: 'Cargando preview de metadata...' })
+      console.log(`[renderer:preview] submit-start ${cleanUrl}`)
 
       const preview = await window.whoDownloads.previewVideo(cleanUrl)
+      console.log(`[renderer:preview] submit-result ${JSON.stringify({ ok: preview.ok })}`)
 
       setIsPreviewLoading(false)
 

@@ -1,5 +1,6 @@
 import type { MetadataResult } from '../../shared/downloadTypes'
 import { runYtDlpForJson } from './ytdlpService'
+import { isDetailedLoggingEnabled } from '../utils/cliArgs'
 
 function getStringField(value: unknown): string {
   return typeof value === 'string' ? value : ''
@@ -43,17 +44,43 @@ export async function fetchVideoMetadata(
   cleanUrl: string,
   authArgs: string[] = []
 ): Promise<MetadataResult> {
+  if (isDetailedLoggingEnabled()) {
+    console.info(
+      `[preview:start] ${JSON.stringify({
+        url: cleanUrl,
+        ytDlpPath,
+        usesCookies: authArgs.includes('--cookies')
+      })}`
+    )
+  }
+
   const result = await runYtDlpForJson(ytDlpPath, [
     '--dump-single-json',
     '--skip-download',
     '--no-playlist',
     ...authArgs,
     cleanUrl
-  ])
+  ], isDetailedLoggingEnabled()
+    ? {
+        prefix: 'preview',
+        info: (message) => console.info(message),
+        warn: (message) => console.warn(message),
+        error: (message) => console.error(message)
+      }
+    : undefined)
 
   if (!result.ok) {
+    if (isDetailedLoggingEnabled()) {
+      console.error(`[preview:failed] ${result.error}`)
+    }
+
     return result
   }
 
-  return mapMetadataPreview(result.stdout, cleanUrl)
+  const mapped = mapMetadataPreview(result.stdout, cleanUrl)
+  if (isDetailedLoggingEnabled()) {
+    console.info(`[preview:result] ${JSON.stringify({ ok: mapped.ok })}`)
+  }
+
+  return mapped
 }

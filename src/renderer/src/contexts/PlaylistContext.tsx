@@ -70,8 +70,15 @@ export function PlaylistProvider({ children }: { children: ReactNode }): JSX.Ele
     setEntries([])
     setPlaylistTitle('')
     setPendingLongPlaylist(null)
+    console.log(`[renderer:playlist] start ${cleanUrl}`)
 
     const result = await window.whoDownloads.fetchPlaylist(cleanUrl)
+    console.log(
+      `[renderer:playlist] result ${JSON.stringify({
+        ok: result.ok,
+        entries: result.ok ? result.entries.length : undefined
+      })}`
+    )
 
     setIsLoading(false)
 

@@ -1,5 +1,6 @@
 import type { PlaylistEntry, PlaylistResult } from '../../shared/downloadTypes'
 import { runYtDlpForJson } from './ytdlpService'
+import { isDetailedLoggingEnabled } from '../utils/cliArgs'
 
 function getStringField(value: unknown): string {
   return typeof value === 'string' ? value : ''
@@ -50,17 +51,48 @@ export async function fetchPlaylistEntries(
   playlistUrl: string,
   authArgs: string[] = []
 ): Promise<PlaylistResult> {
+  if (isDetailedLoggingEnabled()) {
+    console.info(
+      `[playlist:start] ${JSON.stringify({
+        url: playlistUrl,
+        ytDlpPath,
+        usesCookies: authArgs.includes('--cookies')
+      })}`
+    )
+  }
+
   const result = await runYtDlpForJson(ytDlpPath, [
     '--flat-playlist',
     '--dump-single-json',
     '--no-warnings',
     ...authArgs,
     playlistUrl
-  ])
+  ], isDetailedLoggingEnabled()
+    ? {
+        prefix: 'playlist',
+        info: (message) => console.info(message),
+        warn: (message) => console.warn(message),
+        error: (message) => console.error(message)
+      }
+    : undefined)
 
   if (!result.ok) {
+    if (isDetailedLoggingEnabled()) {
+      console.error(`[playlist:failed] ${result.error}`)
+    }
+
     return result
   }
 
-  return mapPlaylistEntries(result.stdout)
+  const mapped = mapPlaylistEntries(result.stdout)
+  if (isDetailedLoggingEnabled()) {
+    console.info(
+      `[playlist:result] ${JSON.stringify({
+        ok: mapped.ok,
+        entries: mapped.ok ? mapped.entries.length : undefined
+      })}`
+    )
+  }
+
+  return mapped
 }
