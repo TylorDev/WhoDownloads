@@ -8,6 +8,12 @@
   <img src="resources/icons/icon.ico" alt="WhoDownloads app icon" width="80" />
 </p>
 
+<p align="center">
+  <a href="https://www.electronjs.org/">
+    <img src="https://skillicons.dev/icons?i=electron,react,ts,vite,sass,vitest,nodejs,npm&theme=dark" alt="Electron, React, TypeScript, Vite, Sass, Vitest, Node.js and npm" />
+  </a>
+</p>
+
 WhoDownloads is a Windows desktop app built with Electron. It helps you download YouTube videos and playlists as MP4 or MP3 from a simple interface: paste a URL, review the video information, choose the format and save the file.
 
 It also includes an embedded YouTube view so you can browse inside the app, detect videos, and add them to a download queue.
