@@ -16,6 +16,11 @@ vi.mock('../utils/paths', () => ({
   getWindowsBinaryPath: vi.fn((_app: App, binaryName: string) => `C:\\bin\\${binaryName}.exe`)
 }))
 
+vi.mock('../utils/ytdlpRuntime', () => ({
+  getWindowsNodeRuntimePath: vi.fn(() => 'C:\\bin\\node\\node.exe'),
+  getYtDlpJsRuntimeArgs: vi.fn((nodePath: string) => ['--js-runtimes', `node:${nodePath}`])
+}))
+
 vi.mock('./youtubeCookies', () => ({
   getYtDlpCookieArgs: vi.fn(() => Promise.resolve([]))
 }))
@@ -90,7 +95,10 @@ describe('previewVideo', () => {
     const result = await previewVideo(createAppStub(), 'https://youtu.be/abc')
 
     expect(result.ok).toBe(true)
-    expect(fetchVideoMetadata).toHaveBeenCalledWith('C:\\bin\\yt-dlp.exe', 'https://youtu.be/abc', [])
+    expect(fetchVideoMetadata).toHaveBeenCalledWith('C:\\bin\\yt-dlp.exe', 'https://youtu.be/abc', [], [
+      '--js-runtimes',
+      'node:C:\\bin\\node\\node.exe'
+    ])
   })
 
   it('passes embedded YouTube cookies to metadata fetches', async () => {
@@ -108,10 +116,12 @@ describe('previewVideo', () => {
 
     await previewVideo(createAppStub(), 'https://youtu.be/abc')
 
-    expect(fetchVideoMetadata).toHaveBeenCalledWith('C:\\bin\\yt-dlp.exe', 'https://youtu.be/abc', [
-      '--cookies',
-      'C:\\UserData\\cookies.txt'
-    ])
+    expect(fetchVideoMetadata).toHaveBeenCalledWith(
+      'C:\\bin\\yt-dlp.exe',
+      'https://youtu.be/abc',
+      ['--cookies', 'C:\\UserData\\cookies.txt'],
+      ['--js-runtimes', 'node:C:\\bin\\node\\node.exe']
+    )
   })
 })
 
@@ -177,7 +187,9 @@ describe('downloadVideo', () => {
 
     expect(access).toHaveBeenCalledWith('C:\\bin\\yt-dlp.exe', expect.any(Number))
     expect(access).toHaveBeenCalledWith('C:\\bin\\ffmpeg.exe', expect.any(Number))
+    expect(access).toHaveBeenCalledWith('C:\\bin\\node\\node.exe', expect.any(Number))
     expect(console.info).toHaveBeenCalledWith(expect.stringContaining('[download:preflight]'))
+    expect(console.info).toHaveBeenCalledWith(expect.stringContaining('"jsRuntimePath":"C:\\\\bin\\\\node\\\\node.exe"'))
   })
 
   it('fails before calling yt-dlp when yt-dlp.exe is inaccessible', async () => {
@@ -215,6 +227,25 @@ describe('downloadVideo', () => {
 
     expect(result.ok).toBe(false)
     expect(result.ok === false ? result.error : '').toContain('No se pudo acceder a ffmpeg.exe')
+    expect(runYtDlpDownload).not.toHaveBeenCalled()
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('[download:preflight]'))
+  })
+
+  it('fails before calling yt-dlp when node.exe is inaccessible', async () => {
+    const sender = createSenderStub()
+    vi.mocked(access)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('access denied'))
+
+    const result = await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/abc', format: 'mp4', quality: '1080' },
+      sender
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.ok === false ? result.error : '').toContain('No se pudo acceder a node.exe')
     expect(runYtDlpDownload).not.toHaveBeenCalled()
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('[download:preflight]'))
   })
@@ -295,6 +326,25 @@ describe('downloadVideo', () => {
     expect(console.info).not.toHaveBeenCalledWith(expect.stringContaining('cookies.txt'))
   })
 
+  it('passes the embedded Node runtime to yt-dlp downloads', async () => {
+    const sender = createSenderStub()
+    vi.mocked(runYtDlpDownload).mockResolvedValue({ ok: true, filePath: 'D:\\Videos\\song.mp4' })
+
+    await downloadVideo(
+      createAppStub(),
+      { url: 'https://youtu.be/abc', format: 'mp4', quality: '720' },
+      sender
+    )
+
+    expect(runYtDlpDownload).toHaveBeenCalledWith(
+      'C:\\bin\\yt-dlp.exe',
+      expect.arrayContaining(['--js-runtimes', 'node:C:\\bin\\node\\node.exe']),
+      'mp4',
+      expect.any(Function),
+      expect.any(Object)
+    )
+  })
+
   it('returns MP4 format errors with fallback conversion guidance', async () => {
     const sender = createSenderStub()
     vi.mocked(runYtDlpDownload).mockResolvedValue({
@@ -331,7 +381,8 @@ describe('downloadVideo', () => {
     expect(runYtDlpDiagnostics).toHaveBeenCalledWith(
       'C:\\bin\\yt-dlp.exe',
       'https://youtu.be/abc',
-      expect.any(Object)
+      expect.any(Object),
+      ['--js-runtimes', 'node:C:\\bin\\node\\node.exe']
     )
   })
 

@@ -102,6 +102,21 @@ describe('getYtDlpArgs', () => {
     expect(args.at(-1)).toBe('https://youtu.be/private')
   })
 
+  it('includes yt-dlp JavaScript runtime args before auth args and the URL', () => {
+    const args = getYtDlpArgs(
+      { url: 'https://youtu.be/private', format: 'mp4', quality: 'auto' },
+      'C:\\bin\\ffmpeg.exe',
+      'C:\\out\\%(title)s.%(ext)s',
+      ['--cookies', 'C:\\UserData\\cookies.txt'],
+      { runtimeArgs: ['--js-runtimes', 'node:C:\\bin\\node\\node.exe'] }
+    )
+
+    expect(args).toContain('--js-runtimes')
+    expect(args).toContain('node:C:\\bin\\node\\node.exe')
+    expect(args.indexOf('--js-runtimes')).toBeLessThan(args.indexOf('--cookies'))
+    expect(args.at(-1)).toBe('https://youtu.be/private')
+  })
+
   it('can build MP4 args with the fallback selector', () => {
     const args = getYtDlpArgs(
       { url: 'https://youtu.be/video', format: 'mp4', quality: '1080' },

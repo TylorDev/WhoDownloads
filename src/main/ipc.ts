@@ -14,6 +14,7 @@ import { getYtDlpCookieArgs } from './services/youtubeCookies'
 import { isDetailedLoggingEnabled } from './utils/cliArgs'
 import { isDownloadInput } from './utils/validation'
 import { getWindowsBinaryPath } from './utils/paths'
+import { getWindowsNodeRuntimePath, getYtDlpJsRuntimeArgs } from './utils/ytdlpRuntime'
 
 let handlersRegistered = false
 
@@ -84,7 +85,12 @@ export function registerIpcHandlers(_mainWindow: BrowserWindow): void {
     logIpc(`[ipc:fetch-playlist] ${JSON.stringify({ url: url.trim(), phase: 'start' })}`)
     const { fetchPlaylistEntries } = await import('./services/playlistService')
     const authArgs = await getYtDlpCookieArgs(app)
-    const result = await fetchPlaylistEntries(getWindowsBinaryPath(app, 'yt-dlp'), url.trim(), authArgs)
+    const result = await fetchPlaylistEntries(
+      getWindowsBinaryPath(app, 'yt-dlp'),
+      url.trim(),
+      authArgs,
+      getYtDlpJsRuntimeArgs(getWindowsNodeRuntimePath(app))
+    )
     logIpc(
       `[ipc:fetch-playlist] ${JSON.stringify({
         url: url.trim(),

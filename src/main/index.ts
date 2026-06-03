@@ -5,6 +5,7 @@ import { forwardRendererConsoleToTerminal } from './utils/consoleForwarder'
 import { isDetailedLoggingEnabled } from './utils/cliArgs'
 import { getAppIconPath, getDownloadOutputDirectory, getWindowsBinaryPath } from './utils/paths'
 import { shouldLogStartupTimings } from './utils/startupLogging'
+import { getWindowsNodeRuntimePath } from './utils/ytdlpRuntime'
 
 const WINDOW_BACKGROUND_COLOR = '#050505'
 const WINDOW_SHOW_FALLBACK_MS = 2500
@@ -31,6 +32,7 @@ function logStartupEnvironment(): void {
       downloads: getDownloadOutputDirectory(app),
       ytDlpPath: getWindowsBinaryPath(app, 'yt-dlp'),
       ffmpegPath: getWindowsBinaryPath(app, 'ffmpeg'),
+      jsRuntimePath: getWindowsNodeRuntimePath(app),
       username: process.env['USERNAME'] || process.env['USER'] || ''
     })}`
   )

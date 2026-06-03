@@ -58,6 +58,7 @@ The installer includes the binaries needed to download and convert videos:
 ```text
 resources/bin/win/yt-dlp.exe
 resources/bin/win/ffmpeg.exe
+resources/bin/win/node/node.exe
 ```
 
 ## Development Setup
@@ -91,9 +92,16 @@ During development, the app looks for these files:
 ```text
 resources/bin/win/yt-dlp.exe
 resources/bin/win/ffmpeg.exe
+resources/bin/win/node/node.exe
 ```
 
-If they are missing, downloads will not work. Add them to that folder before testing real downloads.
+If Node is missing, run:
+
+```bash
+npm run prepare:node
+```
+
+If `yt-dlp.exe` or `ffmpeg.exe` are missing, add them to that folder before testing real downloads.
 
 ### Run The App In Development
 
@@ -158,6 +166,8 @@ Create the Windows installer:
 ```bash
 npm run dist:win
 ```
+
+Both packaging commands run `npm run prepare:node` first so the installer includes the portable Node runtime used by `yt-dlp`.
 
 The generated installer is written to the `dist` folder.
 
@@ -225,6 +235,16 @@ If MP3 or MP4 conversion fails, check that this file exists:
 ```text
 resources/bin/win/ffmpeg.exe
 ```
+
+### Missing `node.exe`
+
+If previews show `Signature solving failed` or `n challenge solving failed`, make sure the portable runtime exists:
+
+```text
+resources/bin/win/node/node.exe
+```
+
+Run `npm run prepare:node` before packaging the app.
 
 ### YouTube Asks You To Verify Your Session
 

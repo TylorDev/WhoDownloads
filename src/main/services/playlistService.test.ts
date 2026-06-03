@@ -27,7 +27,12 @@ describe('fetchPlaylistEntries', () => {
   })
 
   it('fetches playlist entries without cookie args by default', async () => {
-    await fetchPlaylistEntries('C:\\bin\\yt-dlp.exe', 'https://www.youtube.com/playlist?list=abc')
+    await fetchPlaylistEntries(
+      'C:\\bin\\yt-dlp.exe',
+      'https://www.youtube.com/playlist?list=abc',
+      [],
+      ['--js-runtimes', 'node:C:\\bin\\node\\node.exe']
+    )
 
     expect(runYtDlpForJson).toHaveBeenCalledWith(
       'C:\\bin\\yt-dlp.exe',
@@ -35,6 +40,8 @@ describe('fetchPlaylistEntries', () => {
         '--flat-playlist',
         '--dump-single-json',
         '--no-warnings',
+        '--js-runtimes',
+        'node:C:\\bin\\node\\node.exe',
         'https://www.youtube.com/playlist?list=abc'
       ],
       undefined
@@ -45,7 +52,8 @@ describe('fetchPlaylistEntries', () => {
     await fetchPlaylistEntries(
       'C:\\bin\\yt-dlp.exe',
       'https://www.youtube.com/playlist?list=abc',
-      ['--cookies', 'C:\\UserData\\cookies.txt']
+      ['--cookies', 'C:\\UserData\\cookies.txt'],
+      ['--js-runtimes', 'node:C:\\bin\\node\\node.exe']
     )
 
     expect(runYtDlpForJson).toHaveBeenCalledWith(
@@ -54,6 +62,8 @@ describe('fetchPlaylistEntries', () => {
         '--flat-playlist',
         '--dump-single-json',
         '--no-warnings',
+        '--js-runtimes',
+        'node:C:\\bin\\node\\node.exe',
         '--cookies',
         'C:\\UserData\\cookies.txt',
         'https://www.youtube.com/playlist?list=abc'
@@ -66,7 +76,12 @@ describe('fetchPlaylistEntries', () => {
     process.env['WHODOWNLOADS_LOGS'] = '1'
     vi.spyOn(console, 'info').mockImplementation(() => undefined)
 
-    await fetchPlaylistEntries('C:\\bin\\yt-dlp.exe', 'https://www.youtube.com/playlist?list=abc')
+    await fetchPlaylistEntries(
+      'C:\\bin\\yt-dlp.exe',
+      'https://www.youtube.com/playlist?list=abc',
+      [],
+      ['--js-runtimes', 'node:C:\\bin\\node\\node.exe']
+    )
 
     expect(runYtDlpForJson).toHaveBeenCalledWith(
       'C:\\bin\\yt-dlp.exe',
@@ -74,6 +89,7 @@ describe('fetchPlaylistEntries', () => {
       expect.objectContaining({ prefix: 'playlist' })
     )
     expect(console.info).toHaveBeenCalledWith(expect.stringContaining('[playlist:start]'))
+    expect(console.info).toHaveBeenCalledWith(expect.stringContaining('node:C:\\\\bin\\\\node\\\\node.exe'))
     expect(console.info).toHaveBeenCalledWith(expect.stringContaining('[playlist:result]'))
   })
 })

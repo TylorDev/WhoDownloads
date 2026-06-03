@@ -141,12 +141,18 @@ function logCommandOutput(logger: YtDlpDownloadLogger, prefix: string, output: Y
 export async function runYtDlpDiagnostics(
   ytDlpPath: string,
   url: string,
-  logger: YtDlpDownloadLogger
+  logger: YtDlpDownloadLogger,
+  runtimeArgs: string[] = []
 ): Promise<void> {
   const version = await runYtDlpCommand(ytDlpPath, ['--version'])
   logCommandOutput(logger, '[download:yt-dlp-version]', version)
 
-  const formats = await runYtDlpCommand(ytDlpPath, ['--no-playlist', '--list-formats', url])
+  const formats = await runYtDlpCommand(ytDlpPath, [
+    ...runtimeArgs,
+    '--no-playlist',
+    '--list-formats',
+    url
+  ])
   logCommandOutput(logger, '[download:list-formats]', formats)
 }
 

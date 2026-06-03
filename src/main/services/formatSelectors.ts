@@ -27,7 +27,7 @@ export function getYtDlpArgs(
   ffmpegPath: string,
   outputTemplate: string,
   authArgs: string[] = [],
-  options: { useMp4FallbackSelector?: boolean } = {}
+  options: { useMp4FallbackSelector?: boolean; runtimeArgs?: string[] } = {}
 ): string[] {
   const commonArgs = [
     '--no-playlist',
@@ -35,6 +35,7 @@ export function getYtDlpArgs(
     '--windows-filenames',
     '--ffmpeg-location',
     ffmpegPath,
+    ...(options.runtimeArgs ?? []),
     ...authArgs
   ]
 

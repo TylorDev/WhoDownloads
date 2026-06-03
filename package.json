@@ -19,9 +19,10 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:debug": "node scripts/dev.mjs --remote-debugging-port=9222",
+    "prepare:node": "node scripts/prepare-node-runtime.mjs",
     "build": "electron-vite build",
-    "pack:win": "npm run build && electron-builder --win --dir",
-    "dist:win": "npm run build && electron-builder --win",
+    "pack:win": "npm run prepare:node && npm run build && electron-builder --win --dir",
+    "dist:win": "npm run prepare:node && npm run build && electron-builder --win",
     "preview": "electron-vite preview",
     "test": "vitest run",
     "test:watch": "vitest"

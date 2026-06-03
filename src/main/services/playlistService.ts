@@ -49,13 +49,15 @@ export function mapPlaylistEntries(rawJson: string): PlaylistResult {
 export async function fetchPlaylistEntries(
   ytDlpPath: string,
   playlistUrl: string,
-  authArgs: string[] = []
+  authArgs: string[] = [],
+  runtimeArgs: string[] = []
 ): Promise<PlaylistResult> {
   if (isDetailedLoggingEnabled()) {
     console.info(
       `[playlist:start] ${JSON.stringify({
         url: playlistUrl,
         ytDlpPath,
+        jsRuntime: runtimeArgs.includes('--js-runtimes') ? runtimeArgs[runtimeArgs.indexOf('--js-runtimes') + 1] : undefined,
         usesCookies: authArgs.includes('--cookies')
       })}`
     )
@@ -65,6 +67,7 @@ export async function fetchPlaylistEntries(
     '--flat-playlist',
     '--dump-single-json',
     '--no-warnings',
+    ...runtimeArgs,
     ...authArgs,
     playlistUrl
   ], isDetailedLoggingEnabled()

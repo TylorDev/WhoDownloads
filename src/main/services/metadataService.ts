@@ -42,13 +42,15 @@ export function mapMetadataPreview(rawJson: string, fallbackUrl: string): Metada
 export async function fetchVideoMetadata(
   ytDlpPath: string,
   cleanUrl: string,
-  authArgs: string[] = []
+  authArgs: string[] = [],
+  runtimeArgs: string[] = []
 ): Promise<MetadataResult> {
   if (isDetailedLoggingEnabled()) {
     console.info(
       `[preview:start] ${JSON.stringify({
         url: cleanUrl,
         ytDlpPath,
+        jsRuntime: runtimeArgs.includes('--js-runtimes') ? runtimeArgs[runtimeArgs.indexOf('--js-runtimes') + 1] : undefined,
         usesCookies: authArgs.includes('--cookies')
       })}`
     )
@@ -58,6 +60,7 @@ export async function fetchVideoMetadata(
     '--dump-single-json',
     '--skip-download',
     '--no-playlist',
+    ...runtimeArgs,
     ...authArgs,
     cleanUrl
   ], isDetailedLoggingEnabled()

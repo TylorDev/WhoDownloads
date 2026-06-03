@@ -16,6 +16,7 @@ import { getYtDlpCookieArgs } from './youtubeCookies'
 import { getDownloadOutputDirectory, getWindowsBinaryPath } from '../utils/paths'
 import { isDetailedLoggingEnabled } from '../utils/cliArgs'
 import { isYouTubeUrl } from '../utils/validation'
+import { getWindowsNodeRuntimePath, getYtDlpJsRuntimeArgs } from '../utils/ytdlpRuntime'
 
 const MAX_PARALLEL_DOWNLOADS = 4
 let activeDownloads = 0
@@ -74,7 +75,13 @@ function getArgValue(args: string[], name: string): string | undefined {
   return index >= 0 ? args[index + 1] : undefined
 }
 
-function logDownloadStart(input: DownloadInput, args: string[], outputDirectory: string, authArgs: string[]): void {
+function logDownloadStart(
+  input: DownloadInput,
+  args: string[],
+  outputDirectory: string,
+  authArgs: string[],
+  nodePath: string
+): void {
   if (!isDetailedLoggingEnabled()) {
     return
   }
@@ -94,6 +101,7 @@ function logDownloadStart(input: DownloadInput, args: string[], outputDirectory:
       quality: input.quality,
       outputDirectory,
       usesCookies,
+      jsRuntimePath: nodePath,
       mode
     })}`
   )
@@ -137,6 +145,7 @@ function logDownloadPreflight(
   app: App,
   ytDlpPath: string,
   ffmpegPath: string,
+  nodePath: string,
   outputDirectory: string,
   authArgs: string[]
 ): void {
@@ -153,6 +162,7 @@ function logDownloadPreflight(
       outputDirectory,
       ytDlpPath,
       ffmpegPath,
+      jsRuntimePath: nodePath,
       usesCookies: authArgs.includes('--cookies'),
       username: process.env['USERNAME'] || process.env['USER'] || ''
     })}`
@@ -163,10 +173,11 @@ async function runDownloadPreflight(
   app: App,
   ytDlpPath: string,
   ffmpegPath: string,
+  nodePath: string,
   outputDirectory: string,
   authArgs: string[]
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  logDownloadPreflight(app, ytDlpPath, ffmpegPath, outputDirectory, authArgs)
+  logDownloadPreflight(app, ytDlpPath, ffmpegPath, nodePath, outputDirectory, authArgs)
 
   const ytDlpAccess = await checkBinaryAccess('yt-dlp.exe', ytDlpPath)
   if (!ytDlpAccess.ok) {
@@ -178,6 +189,12 @@ async function runDownloadPreflight(
   if (!ffmpegAccess.ok) {
     console.error(`[download:preflight] ${ffmpegAccess.error}`)
     return ffmpegAccess
+  }
+
+  const nodeAccess = await checkBinaryAccess('node.exe', nodePath)
+  if (!nodeAccess.ok) {
+    console.error(`[download:preflight] ${nodeAccess.error}`)
+    return nodeAccess
   }
 
   return { ok: true }
@@ -195,8 +212,10 @@ export async function previewVideo(app: App, url: string): Promise<MetadataResul
   }
 
   const authArgs = await getYtDlpCookieArgs(app)
+  const nodePath = getWindowsNodeRuntimePath(app)
+  const runtimeArgs = getYtDlpJsRuntimeArgs(nodePath)
 
-  return fetchVideoMetadata(getWindowsBinaryPath(app, 'yt-dlp'), cleanUrl, authArgs)
+  return fetchVideoMetadata(getWindowsBinaryPath(app, 'yt-dlp'), cleanUrl, authArgs, runtimeArgs)
 }
 
 export async function downloadVideo(
@@ -228,16 +247,31 @@ export async function downloadVideo(
 
     const ytDlpPath = getWindowsBinaryPath(app, 'yt-dlp')
     const ffmpegPath = getWindowsBinaryPath(app, 'ffmpeg')
+    const nodePath = getWindowsNodeRuntimePath(app)
+    const runtimeArgs = getYtDlpJsRuntimeArgs(nodePath)
     const outputTemplate = join(outputDirectory, '%(title).180B.%(ext)s')
     const authArgs = await getYtDlpCookieArgs(app)
-    const args = getYtDlpArgs({ ...input, url: cleanUrl } as DownloadInput, ffmpegPath, outputTemplate, authArgs)
-    const preflight = await runDownloadPreflight(app, ytDlpPath, ffmpegPath, outputDirectory, authArgs)
+    const args = getYtDlpArgs(
+      { ...input, url: cleanUrl } as DownloadInput,
+      ffmpegPath,
+      outputTemplate,
+      authArgs,
+      { runtimeArgs }
+    )
+    const preflight = await runDownloadPreflight(
+      app,
+      ytDlpPath,
+      ffmpegPath,
+      nodePath,
+      outputDirectory,
+      authArgs
+    )
     if (!preflight.ok) {
       emitProgress(sender, withTaskId(input, { status: 'failed', message: preflight.error }))
       return { ok: false, error: preflight.error }
     }
 
-    logDownloadStart({ ...input, url: cleanUrl } as DownloadInput, args, outputDirectory, authArgs)
+    logDownloadStart({ ...input, url: cleanUrl } as DownloadInput, args, outputDirectory, authArgs, nodePath)
     let result = await runYtDlpDownload(
       ytDlpPath,
       args,
@@ -254,7 +288,7 @@ export async function downloadVideo(
         ffmpegPath,
         outputTemplate,
         authArgs,
-        { useMp4FallbackSelector: true }
+        { useMp4FallbackSelector: true, runtimeArgs }
       )
       logDownloadRetry({ ...input, url: cleanUrl } as DownloadInput, fallbackArgs)
       result = await runYtDlpDownload(
@@ -269,7 +303,7 @@ export async function downloadVideo(
     }
 
     if (!result.ok && input.format === 'mp4' && isFormatUnavailable(result.stderr) && isDetailedLoggingEnabled()) {
-      await runYtDlpDiagnostics(ytDlpPath, cleanUrl, downloadLogger)
+      await runYtDlpDiagnostics(ytDlpPath, cleanUrl, downloadLogger, runtimeArgs)
     }
 
     if (result.ok) {

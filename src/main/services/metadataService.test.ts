@@ -27,7 +27,12 @@ describe('fetchVideoMetadata', () => {
   })
 
   it('fetches metadata without a logger by default', async () => {
-    await fetchVideoMetadata('C:\\bin\\yt-dlp.exe', 'https://youtu.be/abc')
+    await fetchVideoMetadata(
+      'C:\\bin\\yt-dlp.exe',
+      'https://youtu.be/abc',
+      [],
+      ['--js-runtimes', 'node:C:\\bin\\node\\node.exe']
+    )
 
     expect(runYtDlpForJson).toHaveBeenCalledWith(
       'C:\\bin\\yt-dlp.exe',
@@ -35,6 +40,8 @@ describe('fetchVideoMetadata', () => {
         '--dump-single-json',
         '--skip-download',
         '--no-playlist',
+        '--js-runtimes',
+        'node:C:\\bin\\node\\node.exe',
         'https://youtu.be/abc'
       ],
       undefined
@@ -45,7 +52,12 @@ describe('fetchVideoMetadata', () => {
     process.env['WHODOWNLOADS_LOGS'] = '1'
     vi.spyOn(console, 'info').mockImplementation(() => undefined)
 
-    await fetchVideoMetadata('C:\\bin\\yt-dlp.exe', 'https://youtu.be/abc')
+    await fetchVideoMetadata(
+      'C:\\bin\\yt-dlp.exe',
+      'https://youtu.be/abc',
+      [],
+      ['--js-runtimes', 'node:C:\\bin\\node\\node.exe']
+    )
 
     expect(runYtDlpForJson).toHaveBeenCalledWith(
       'C:\\bin\\yt-dlp.exe',
@@ -53,6 +65,7 @@ describe('fetchVideoMetadata', () => {
       expect.objectContaining({ prefix: 'preview' })
     )
     expect(console.info).toHaveBeenCalledWith(expect.stringContaining('[preview:start]'))
+    expect(console.info).toHaveBeenCalledWith(expect.stringContaining('node:C:\\\\bin\\\\node\\\\node.exe'))
     expect(console.info).toHaveBeenCalledWith(expect.stringContaining('[preview:result]'))
   })
 })
