@@ -3,11 +3,6 @@
 <p align="center">
   <img src="resources/bin/win/logo.svg" alt="WhoDownloads logo" width="220" />
 </p>
-
-<p align="center">
-  <img src="resources/icons/icon.ico" alt="WhoDownloads app icon" width="80" />
-</p>
-
 <p align="center">
   <a href="https://www.electronjs.org/">
     <img src="https://skillicons.dev/icons?i=electron,react,ts,vite,sass,vitest,nodejs,npm&theme=dark" alt="Electron, React, TypeScript, Vite, Sass, Vitest, Node.js and npm" />
