@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import PlaylistPanel from '../components/PlaylistPanel/PlaylistPanel'
 import StatusPanel from '../components/StatusPanel/StatusPanel'
 import { useDownloadContext } from '../contexts/DownloadContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { usePlaylistContext } from '../contexts/PlaylistContext'
 import { useNavigation } from '../contexts/NavigationContext'
 import type { QueueVideo } from '../components/Cola/types'
@@ -9,6 +10,7 @@ import { playlistEntriesToQueueVideos } from '../utils/queueVideos'
 import type { VideoMetadataPreview } from '../../../shared/downloadTypes'
 
 function PlaylistPage(): JSX.Element {
+  const { t } = useLanguage()
   const playlist = usePlaylistContext()
   const download = useDownloadContext()
   const { pendingPlaylistUrl, clearPendingPlaylistUrl } = useNavigation()
@@ -58,8 +60,8 @@ function PlaylistPage(): JSX.Element {
   return (
     <section className="page-section">
       <div className="page-heading">
-        <p className="page-heading__eyebrow">Playlist</p>
-        <h1>Explora una playlist</h1>
+        <p className="page-heading__eyebrow">{t('playlist.eyebrow')}</p>
+        <h1>{t('playlist.title')}</h1>
       </div>
       <PlaylistPanel
         playlistUrl={playlist.playlistUrl}

@@ -13,20 +13,22 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import type { AppPage } from '../../contexts/NavigationContext'
+import { useLanguage, type TranslationKey } from '../../contexts/LanguageContext'
 import { useNavigation } from '../../contexts/NavigationContext'
 import { useSettings } from '../../contexts/SettingsContext'
 import logoUrl from '../../assets/logo.svg'
 import './AppHeader.scss'
 
-const pages: Array<{ id: AppPage; label: string; Icon: LucideIcon }> = [
-  { id: 'home', label: 'Home', Icon: Home },
-  { id: 'playlist', label: 'Playlist', Icon: ListMusic },
-  { id: 'youtube', label: 'Youtube', Icon: MonitorPlay },
-  { id: 'downloads', label: 'Downloads', Icon: Download },
-  { id: 'settings', label: 'Settings', Icon: Settings }
+const pages: Array<{ id: AppPage; labelKey: TranslationKey; Icon: LucideIcon }> = [
+  { id: 'home', labelKey: 'nav.home', Icon: Home },
+  { id: 'playlist', labelKey: 'nav.playlist', Icon: ListMusic },
+  { id: 'youtube', labelKey: 'nav.youtube', Icon: MonitorPlay },
+  { id: 'downloads', labelKey: 'nav.downloads', Icon: Download },
+  { id: 'settings', labelKey: 'nav.settings', Icon: Settings }
 ]
 
 function AppHeader(): JSX.Element {
+  const { t } = useLanguage()
   const { activePage, setActivePage } = useNavigation()
   const { settings, isLoading } = useSettings()
   const [isMaximized, setIsMaximized] = useState(false)
@@ -71,7 +73,7 @@ function AppHeader(): JSX.Element {
         </span>
        
       </div>
-      <nav className="app-header__nav" aria-label="Principal">
+      <nav className="app-header__nav" aria-label={t('app.navAriaLabel')}>
         {pages.map((page) => {
           const isActive = activePage === page.id
           const { Icon } = page
@@ -85,30 +87,30 @@ function AppHeader(): JSX.Element {
               onClick={() => setActivePage(page.id)}
             >
               <Icon size={16} strokeWidth={2.1} aria-hidden="true" />
-              <span>{page.label}</span>
+              <span>{t(page.labelKey)}</span>
             </button>
           )
         })}
       </nav>
       <div className="app-header__right">
-        <div className="app-header__actions" aria-label="Acciones de descargas">
+        <div className="app-header__actions" aria-label={t('app.downloadActionsAriaLabel')}>
           <button
             className="app-header__action-button"
             type="button"
-            aria-label="Abrir carpeta de descargas"
-            title="Abrir carpeta de descargas"
+            aria-label={t('app.openDownloadsFolder')}
+            title={t('app.openDownloadsFolder')}
             disabled={isLoading || !settings.downloadDirectory}
             onClick={handleOpenDownloadDirectory}
           >
             <FolderOpen size={16} strokeWidth={2.1} aria-hidden="true" />
           </button>
         </div>
-        <div className="app-header__window-controls" aria-label="Controles de ventana">
+        <div className="app-header__window-controls" aria-label={t('app.windowControlsAriaLabel')}>
           <button
             className="app-header__window-button"
             type="button"
-            aria-label="Minimizar"
-            title="Minimizar"
+            aria-label={t('app.minimize')}
+            title={t('app.minimize')}
             onClick={() => void window.whoDownloads.windowControls.minimize()}
           >
             <Minus size={15} strokeWidth={2} aria-hidden="true" />
@@ -116,8 +118,8 @@ function AppHeader(): JSX.Element {
           <button
             className="app-header__window-button"
             type="button"
-            aria-label={isMaximized ? 'Restaurar' : 'Maximizar'}
-            title={isMaximized ? 'Restaurar' : 'Maximizar'}
+            aria-label={isMaximized ? t('app.restore') : t('app.maximize')}
+            title={isMaximized ? t('app.restore') : t('app.maximize')}
             onClick={handleToggleMaximize}
           >
             {isMaximized ? (
@@ -129,8 +131,8 @@ function AppHeader(): JSX.Element {
           <button
             className="app-header__window-button app-header__window-button--close"
             type="button"
-            aria-label="Cerrar"
-            title="Cerrar"
+            aria-label={t('app.close')}
+            title={t('app.close')}
             onClick={() => void window.whoDownloads.windowControls.close()}
           >
             <X size={16} strokeWidth={2} aria-hidden="true" />

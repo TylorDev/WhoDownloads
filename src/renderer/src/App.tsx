@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import AppHeader from './components/AppHeader/AppHeader'
 import { DownloadProvider } from './contexts/DownloadContext'
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { NavigationProvider, useNavigation } from './contexts/NavigationContext'
 import { PlaylistProvider } from './contexts/PlaylistContext'
 import { SettingsProvider } from './contexts/SettingsContext'
@@ -15,11 +16,13 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const YouTubePage = lazy(() => import('./pages/YouTubePage'))
 
 function PageFallback(): JSX.Element {
+  const { t } = useLanguage()
+
   return (
     <section className="page-section" aria-busy="true">
       <div className="page-heading">
-        <p className="page-heading__eyebrow">Cargando</p>
-        <h1>Preparando vista</h1>
+        <p className="page-heading__eyebrow">{t('app.loadingEyebrow')}</p>
+        <h1>{t('app.loadingTitle')}</h1>
       </div>
     </section>
   )
@@ -82,17 +85,19 @@ function AppContent(): JSX.Element {
 
 function App(): JSX.Element {
   return (
-    <NavigationProvider>
-      <SettingsProvider>
-        <DownloadProvider>
-          <PlaylistProvider>
-            <YouTubeProvider>
-              <AppContent />
-            </YouTubeProvider>
-          </PlaylistProvider>
-        </DownloadProvider>
-      </SettingsProvider>
-    </NavigationProvider>
+    <LanguageProvider>
+      <NavigationProvider>
+        <SettingsProvider>
+          <DownloadProvider>
+            <PlaylistProvider>
+              <YouTubeProvider>
+                <AppContent />
+              </YouTubeProvider>
+            </PlaylistProvider>
+          </DownloadProvider>
+        </SettingsProvider>
+      </NavigationProvider>
+    </LanguageProvider>
   )
 }
 

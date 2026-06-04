@@ -4,6 +4,7 @@ import Cola from '../components/Cola/Cola'
 import StatusPanel from '../components/StatusPanel/StatusPanel'
 import YouTubeBrowser from '../components/YouTubeBrowser/YouTubeBrowser'
 import { useDownloadContext } from '../contexts/DownloadContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { useNavigation } from '../contexts/NavigationContext'
 import { useYouTubeContext } from '../contexts/YouTubeContext'
 import type { QueueVideo } from '../components/Cola/types'
@@ -11,6 +12,7 @@ import { urlsToQueueVideos } from '../utils/queueVideos'
 import type { VideoMetadataPreview } from '../../../shared/downloadTypes'
 
 function YouTubePage(): JSX.Element {
+  const { t } = useLanguage()
   const youtube = useYouTubeContext()
   const download = useDownloadContext()
   const { setActivePage } = useNavigation()
@@ -80,11 +82,11 @@ function YouTubePage(): JSX.Element {
           className="youtube-page__toggle"
           type="button"
           aria-pressed={isSidePanelOpen}
-          aria-label={isSidePanelOpen ? 'Ocultar lista lateral' : 'Mostrar lista lateral'}
+          aria-label={isSidePanelOpen ? t('youtube.hideSideList') : t('youtube.showSideList')}
           onClick={() => setIsSidePanelOpen((isOpen) => !isOpen)}
         >
           {isSidePanelOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
-          <span>{isSidePanelOpen ? 'Ocultar lista' : 'Mostrar lista'}</span>
+          <span>{isSidePanelOpen ? t('youtube.hideList') : t('youtube.showList')}</span>
           <span className="youtube-page__toggle-count">{queueVideos.length}</span>
         </button>
         <YouTubeBrowser
@@ -104,8 +106,8 @@ function YouTubePage(): JSX.Element {
           >
             <span className="youtube-click-toast__label">
               {visibleNotice.isDuplicate
-                ? 'Este video ya estaba en la lista'
-                : 'Video agregado a la lista'}
+                ? t('youtube.duplicateToast')
+                : t('youtube.addedToast')}
             </span>
             <span className="youtube-click-toast__url">{visibleNotice.url}</span>
           </div>
@@ -113,11 +115,11 @@ function YouTubePage(): JSX.Element {
       </div>
       <div className="youtube-page__side" aria-hidden={!isSidePanelOpen}>
         <Cola
-          title="Videos clickeados"
-          emptyMessage="Abre YouTube dentro de la app y entra a videos para agregarlos a esta lista."
+          title={t('youtube.clickedTitle')}
+          emptyMessage={t('youtube.clickedEmpty')}
           videos={queueVideos}
           isDisabled={download.isBatchDownloading}
-          downloadLabel="Descargar"
+          downloadLabel={t('youtube.clickedDownloadLabel')}
           onDownloadAll={downloadClickedVideos}
           onQuickDownloadVideo={quickDownload}
           onRemoveVideo={youtube.removeClickedVideo}

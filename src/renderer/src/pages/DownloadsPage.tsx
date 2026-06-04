@@ -1,5 +1,6 @@
 import DownloadProgressFeedback from '../components/DownloadProgressFeedback/DownloadProgressFeedback'
 import { useDownloadContext } from '../contexts/DownloadContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { formatDuration } from '../utils/formatDuration'
 import { getDownloadTaskTitle } from '../utils/downloadTasks'
 import type { DownloadTask, DownloadTaskStatus } from '../types/ipc'
@@ -20,19 +21,20 @@ function getSortedTasks(tasks: DownloadTask[]): DownloadTask[] {
 }
 
 function DownloadsPage(): JSX.Element {
+  const { t } = useLanguage()
   const { downloadTasks, showDownloadInFolder } = useDownloadContext()
   const sortedTasks = getSortedTasks(downloadTasks)
 
   return (
     <section className="page-section downloads-page">
       <div className="page-heading">
-        <p className="page-heading__eyebrow">Downloads</p>
-        <h1>Detalles de descarga</h1>
+        <p className="page-heading__eyebrow">{t('downloads.eyebrow')}</p>
+        <h1>{t('downloads.title')}</h1>
       </div>
 
       {sortedTasks.length === 0 ? (
         <div className="downloads-empty">
-          <p>No hay descargas en esta sesion.</p>
+          <p>{t('downloads.empty')}</p>
         </div>
       ) : (
         <div className="downloads-list">
@@ -62,19 +64,19 @@ function DownloadsPage(): JSX.Element {
                   <dl className="download-task__metadata">
                     {task.metadata.artist && (
                       <div>
-                        <dt>Canal</dt>
+                        <dt>{t('downloads.channel')}</dt>
                         <dd>{task.metadata.artist}</dd>
                       </div>
                     )}
                     {task.metadata.duration != null && (
                       <div>
-                        <dt>Duracion</dt>
+                        <dt>{t('downloads.duration')}</dt>
                         <dd>{formatDuration(task.metadata.duration)}</dd>
                       </div>
                     )}
                     {task.metadata.year && (
                       <div>
-                        <dt>Anio</dt>
+                        <dt>{t('downloads.year')}</dt>
                         <dd>{task.metadata.year}</dd>
                       </div>
                     )}
@@ -90,7 +92,7 @@ function DownloadsPage(): JSX.Element {
                       type="button"
                       onClick={() => void showDownloadInFolder(task.filePath!)}
                     >
-                      Mostrar en carpeta
+                      {t('downloads.showInFolder')}
                     </button>
                   </div>
                 )}

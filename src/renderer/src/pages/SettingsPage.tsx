@@ -1,7 +1,9 @@
 import type { DownloadFormat, DownloadQuality } from '../types/ipc'
+import { useLanguage } from '../contexts/LanguageContext'
 import { useSettings } from '../contexts/SettingsContext'
 
 function SettingsPage(): JSX.Element {
+  const { t } = useLanguage()
   const {
     settings,
     isLoading,
@@ -15,8 +17,8 @@ function SettingsPage(): JSX.Element {
   return (
     <section className="page-section">
       <div className="page-heading">
-        <p className="page-heading__eyebrow">Settings</p>
-        <h1>Preferencias de descarga</h1>
+        <p className="page-heading__eyebrow">{t('settings.eyebrow')}</p>
+        <h1>{t('settings.title')}</h1>
       </div>
 
       <div className="settings-panel">
@@ -28,12 +30,12 @@ function SettingsPage(): JSX.Element {
           }
         >
           {settings.quickDownloadConfigured
-            ? 'Descarga rapida configurada.'
-            : 'Configura carpeta, formato y calidad para habilitar descarga rapida.'}
+            ? t('settings.quickReady')
+            : t('settings.quickNeedsConfig')}
         </p>
 
         <label className="field" htmlFor="download-directory">
-          <span className="field__label">Directorio de descargas</span>
+          <span className="field__label">{t('settings.directoryLabel')}</span>
           <div className="settings-panel__directory">
             <input
               id="download-directory"
@@ -43,14 +45,14 @@ function SettingsPage(): JSX.Element {
               disabled={isLoading}
             />
             <button className="secondary-button" type="button" onClick={chooseDirectory}>
-              Elegir carpeta
+              {t('settings.chooseFolder')}
             </button>
           </div>
         </label>
 
         <div className="control-grid">
           <label className="field" htmlFor="default-format">
-            <span className="field__label">Formato por defecto</span>
+            <span className="field__label">{t('settings.defaultFormat')}</span>
             <select
               id="default-format"
               className="form-control form-control--select"
@@ -58,13 +60,13 @@ function SettingsPage(): JSX.Element {
               onChange={(event) => void updateFormat(event.target.value as DownloadFormat)}
               disabled={isLoading}
             >
-              <option value="mp4">MP4 compatible</option>
-              <option value="mp3">MP3 audio</option>
+              <option value="mp4">{t('settings.mp4Option')}</option>
+              <option value="mp3">{t('settings.mp3Option')}</option>
             </select>
           </label>
 
           <label className="field" htmlFor="default-quality">
-            <span className="field__label">Calidad por defecto</span>
+            <span className="field__label">{t('settings.defaultQuality')}</span>
             <select
               id="default-quality"
               className="form-control form-control--select"
@@ -74,14 +76,14 @@ function SettingsPage(): JSX.Element {
             >
               {settings.defaultFormat === 'mp4' ? (
                 <>
-                  <option value="auto">Auto</option>
+                  <option value="auto">{t('settings.autoOption')}</option>
                   <option value="1080">1080p</option>
                   <option value="720">720p</option>
                   <option value="480">480p</option>
                 </>
               ) : (
                 <>
-                  <option value="auto">Auto</option>
+                  <option value="auto">{t('settings.autoOption')}</option>
                   <option value="320">320 kbps</option>
                   <option value="192">192 kbps</option>
                   <option value="128">128 kbps</option>
@@ -97,7 +99,7 @@ function SettingsPage(): JSX.Element {
           disabled={isLoading || !settings.downloadDirectory.trim()}
           onClick={() => void confirmQuickDownloadSettings()}
         >
-          Confirmar descarga rapida
+          {t('settings.confirmQuickDownload')}
         </button>
 
         {error && <p className="settings-panel__error">{error}</p>}

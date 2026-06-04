@@ -1,3 +1,4 @@
+import { useLanguage } from '../../contexts/LanguageContext'
 import Video from './Video'
 import type { QueueVideo } from './types'
 import './Cola.scss'
@@ -23,6 +24,7 @@ function Cola({
   onQuickDownloadVideo,
   onRemoveVideo
 }: ColaProps): JSX.Element {
+  const { t } = useLanguage()
   const hasVideos = videos.length > 0
 
   return (
@@ -40,7 +42,7 @@ function Cola({
             disabled={isDisabled}
             onClick={() => onDownloadAll(videos)}
           >
-            {isDisabled ? 'Descargando...' : downloadLabel}
+            {isDisabled ? t('queue.downloading') : downloadLabel}
           </button>
           <ol className="cola__list">
             {videos.map((video) => (

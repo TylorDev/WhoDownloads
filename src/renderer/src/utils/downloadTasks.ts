@@ -18,7 +18,8 @@ export function createDownloadTaskId(): string {
 
 export function createDownloadTask(
   input: DownloadInput,
-  metadata?: VideoMetadataPreview
+  metadata?: VideoMetadataPreview,
+  queuedMessage = 'Queued.'
 ): DownloadTask {
   const id = input.taskId ?? createDownloadTaskId()
 
@@ -30,7 +31,7 @@ export function createDownloadTask(
     status: 'queued',
     percent: 0,
     metadata,
-    message: 'En cola.'
+    message: queuedMessage
   }
 }
 
@@ -73,7 +74,9 @@ export function applyTaskProgress(tasks: DownloadTask[], progress: DownloadProgr
 export function applyTaskResult(
   tasks: DownloadTask[],
   taskId: string,
-  result: DownloadResult
+  result: DownloadResult,
+  formatCompletedMessage = (filePath?: string): string =>
+    filePath ? `Downloaded to ${filePath}` : 'Download completed.'
 ): DownloadTask[] {
   return tasks.map((task) => {
     if (task.id !== taskId) {
@@ -88,7 +91,7 @@ export function applyTaskResult(
         stepHistory: appendStepHistory(task.stepHistory, 'completed'),
         percent: 100,
         filePath: result.filePath,
-        message: result.filePath ? `Descargado en ${result.filePath}` : 'Descarga completada.'
+        message: formatCompletedMessage(result.filePath)
       }
     }
 

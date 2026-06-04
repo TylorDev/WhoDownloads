@@ -7,6 +7,7 @@ import {
   type PendingLongPlaylist
 } from '../utils/playlistLimit'
 import { shouldClearPlaylistStateForUrl } from '../utils/downloadCompletion'
+import { useLanguage } from './LanguageContext'
 
 interface PlaylistContextValue {
   playlistUrl: string
@@ -26,6 +27,7 @@ interface PlaylistContextValue {
 const PlaylistContext = createContext<PlaylistContextValue | null>(null)
 
 export function PlaylistProvider({ children }: { children: ReactNode }): JSX.Element {
+  const { t } = useLanguage()
   const [playlistUrl, setPlaylistUrlState] = useState('')
   const [playlistTitle, setPlaylistTitle] = useState('')
   const [entries, setEntries] = useState<PlaylistEntry[]>([])
@@ -56,12 +58,12 @@ export function PlaylistProvider({ children }: { children: ReactNode }): JSX.Ele
     setPlaylistUrl(cleanUrl)
 
     if (!cleanUrl) {
-      setError('Pega una URL de playlist de YouTube.')
+      setError(t('playlist.errorMissingUrl'))
       return
     }
 
     if (!looksLikeYouTubePlaylistUrl(cleanUrl)) {
-      setError('La URL debe ser una playlist de YouTube (con ?list=...).')
+      setError(t('playlist.errorInvalidUrl'))
       return
     }
 
@@ -88,7 +90,7 @@ export function PlaylistProvider({ children }: { children: ReactNode }): JSX.Ele
     }
 
     if (result.entries.length === 0) {
-      setError('La playlist esta vacia o no se encontraron videos.')
+      setError(t('playlist.errorEmpty'))
       return
     }
 
@@ -99,7 +101,7 @@ export function PlaylistProvider({ children }: { children: ReactNode }): JSX.Ele
 
     setPlaylistTitle(result.title)
     setEntries(result.entries)
-  }, [setPlaylistUrl])
+  }, [setPlaylistUrl, t])
 
   const fetchPlaylist = useCallback(async (event?: FormEvent<HTMLFormElement>): Promise<void> => {
     event?.preventDefault()

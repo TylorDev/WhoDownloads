@@ -1,4 +1,5 @@
 import type { VideoMetadataPreview } from '../../../shared/downloadTypes'
+import { useLanguage } from '../../contexts/LanguageContext'
 import { formatDuration } from '../../utils/formatDuration'
 import './MetadataCard.scss'
 
@@ -7,6 +8,8 @@ interface MetadataCardProps {
 }
 
 function MetadataCard({ metadata }: MetadataCardProps): JSX.Element {
+  const { t } = useLanguage()
+
   return (
     <div className="metadata-card">
       {metadata.thumbnailUrl && (
@@ -14,26 +17,26 @@ function MetadataCard({ metadata }: MetadataCardProps): JSX.Element {
       )}
       <div className="metadata-card__body">
         <div>
-          <p className="metadata-card__eyebrow">Preview de metadata</p>
+          <p className="metadata-card__eyebrow">{t('metadata.eyebrow')}</p>
           <h2 className="metadata-card__title">{metadata.title}</h2>
         </div>
         <dl className="metadata-card__details">
           <div>
-            <dt className="metadata-card__term">Artist</dt>
+            <dt className="metadata-card__term">{t('metadata.artist')}</dt>
             <dd className="metadata-card__description">{metadata.artist}</dd>
           </div>
           <div>
-            <dt className="metadata-card__term">Año</dt>
-            <dd className="metadata-card__description">{metadata.year || 'No disponible'}</dd>
+            <dt className="metadata-card__term">{t('metadata.year')}</dt>
+            <dd className="metadata-card__description">{metadata.year || t('metadata.unavailable')}</dd>
           </div>
           <div>
-            <dt className="metadata-card__term">Duración</dt>
+            <dt className="metadata-card__term">{t('metadata.duration')}</dt>
             <dd className="metadata-card__description">
-              {formatDuration(metadata.duration) || 'No disponible'}
+              {formatDuration(metadata.duration) || t('metadata.unavailable')}
             </dd>
           </div>
           <div>
-            <dt className="metadata-card__term">URL del autor</dt>
+            <dt className="metadata-card__term">{t('metadata.authorUrl')}</dt>
             <dd className="metadata-card__description break-anywhere">{metadata.authorUrl}</dd>
           </div>
         </dl>

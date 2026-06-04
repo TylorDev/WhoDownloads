@@ -19,6 +19,7 @@ import type {
   Mp4Quality
 } from '../types/ipc'
 import type { VideoMetadataPreview } from '../../../shared/downloadTypes'
+import { useLanguage } from './LanguageContext'
 import { useSettings } from './SettingsContext'
 import { useNavigation } from './NavigationContext'
 import {
@@ -76,6 +77,7 @@ function buildInput(
 }
 
 export function DownloadProvider({ children }: { children: ReactNode }): JSX.Element {
+  const { t } = useLanguage()
   const { settings, updateFormat, updateQuality } = useSettings()
   const { setActivePage } = useNavigation()
   const [url, setUrl] = useState('')
@@ -85,7 +87,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
   const [downloadTasks, setDownloadTasks] = useState<DownloadTask[]>([])
   const [progress, setProgress] = useState<DownloadProgress>({
     status: 'idle',
-    message: 'Listo para descargar.'
+    message: t('status.readyMessage')
   })
   const [isDownloading, setIsDownloading] = useState(false)
   const [isBatchDownloading, setIsBatchDownloading] = useState(false)
@@ -151,12 +153,12 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
       async function loadPreview(): Promise<void> {
         setIsPreviewLoading(true)
         isPreviewLoadingRef.current = true
-        setProgress({ status: 'starting', step: 'preparing', message: 'Cargando preview de metadata...' })
+        setProgress({ status: 'starting', step: 'preparing', message: t('status.loadingPreviewMessage') })
         console.log(`[renderer:preview] start ${cleanUrl}`)
 
         const preview = await window.whoDownloads.previewVideo(cleanUrl).catch((error: unknown) => ({
           ok: false as const,
-          error: error instanceof Error ? error.message : 'No se pudo cargar la preview.'
+          error: error instanceof Error ? error.message : t('status.previewFailedMessage')
         }))
         console.log(`[renderer:preview] result ${JSON.stringify({ ok: preview.ok })}`)
 
@@ -174,7 +176,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
 
         setMetadata(preview.metadata)
         setMetadataUrl(cleanUrl)
-        setProgress({ status: 'idle', message: 'Preview lista. Revisa los datos y descarga.' })
+        setProgress({ status: 'idle', message: t('status.previewReadyMessage') })
       }
 
       void loadPreview()
@@ -189,7 +191,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
       isPreviewLoadingRef.current = false
       window.clearTimeout(previewTimer)
     }
-  }, [cleanUrl, quickDownloadEnabled, isDownloading, metadataUrl])
+  }, [cleanUrl, quickDownloadEnabled, isDownloading, metadataUrl, t])
 
   function setVideoUrl(value: string): void {
     setUrl(value)
@@ -197,7 +199,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     if (metadata) {
       setMetadata(null)
       setMetadataUrl('')
-      setProgress({ status: 'idle', message: 'La URL cambio. Cargando nueva preview...' })
+      setProgress({ status: 'idle', message: t('status.urlChangedMessage') })
     }
   }
 
@@ -215,30 +217,36 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     setMetadataUrl('')
   }
 
+  function formatCompletedDownloadMessage(filePath?: string): string {
+    return filePath
+      ? t('status.downloadedAt', { path: filePath })
+      : t('status.downloadCompletedMessage')
+  }
+
   async function startDownload(input: DownloadInput): Promise<boolean> {
     if (isBatchDownloadingRef.current) {
       setProgress({
         status: 'failed',
-        message: 'Hay una lista descargandose. Espera a que termine.'
+        message: t('status.batchActiveMessage')
       })
       return false
     }
 
     if (isDownloadingRef.current) {
-      setProgress({ status: 'failed', message: 'Ya hay una descarga activa. Espera a que termine.' })
+      setProgress({ status: 'failed', message: t('status.downloadActiveMessage') })
       return false
     }
 
     const taskInput = input.taskId ? input : { ...input, taskId: createDownloadTaskId() }
     const taskMetadata = metadataUrl === taskInput.url ? metadata ?? undefined : undefined
     setDownloadTasks((currentTasks) => [
-      createDownloadTask(taskInput, taskMetadata),
+      createDownloadTask(taskInput, taskMetadata, t('status.queuedMessage')),
       ...currentTasks.filter((task) => task.id !== taskInput.taskId)
     ])
 
     isDownloadingRef.current = true
     setIsDownloading(true)
-    setProgress({ status: 'starting', step: 'preparing', message: 'Preparando descarga...' })
+    setProgress({ status: 'starting', step: 'preparing', message: t('status.preparingDownloadMessage') })
     console.log(
       `[renderer:download] start ${JSON.stringify({
         url: taskInput.url,
@@ -255,7 +263,9 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
         taskId: taskInput.taskId
       })}`
     )
-    setDownloadTasks((currentTasks) => applyTaskResult(currentTasks, taskInput.taskId, result))
+    setDownloadTasks((currentTasks) =>
+      applyTaskResult(currentTasks, taskInput.taskId, result, formatCompletedDownloadMessage)
+    )
 
     if (!result.ok) {
       setIsDownloading(false)
@@ -274,7 +284,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
       step: 'completed',
       percent: 100,
       filePath: result.filePath,
-      message: result.filePath ? `Descargado en ${result.filePath}` : 'Descarga completada.'
+      message: formatCompletedDownloadMessage(result.filePath)
     })
     return true
   }
@@ -286,18 +296,18 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     if (!settings.quickDownloadConfigured) {
       setProgress({
         status: 'failed',
-        message: 'Configura carpeta, formato y calidad en Settings antes de usar descarga rapida.'
+        message: t('status.quickNeedsConfigMessage')
       })
       return
     }
 
     if (!cleanVideoUrl) {
-      setProgress({ status: 'failed', message: 'Pega una URL de YouTube primero.' })
+      setProgress({ status: 'failed', message: t('status.missingYouTubeUrlMessage') })
       return
     }
 
     if (!looksLikeYouTubeUrl(cleanVideoUrl)) {
-      setProgress({ status: 'failed', message: 'La URL debe ser de youtube.com o youtu.be.' })
+      setProgress({ status: 'failed', message: t('status.invalidYouTubeUrlMessage') })
       return
     }
 
@@ -312,7 +322,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     if (isBatchDownloadingRef.current || isDownloadingRef.current) {
       setProgress({
         status: 'failed',
-        message: 'Ya hay una descarga activa. Espera a que termine.'
+        message: t('status.downloadActiveMessage')
       })
       return false
     }
@@ -320,7 +330,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     if (!settings.quickDownloadConfigured) {
       setProgress({
         status: 'failed',
-        message: 'Configura carpeta, formato y calidad en Settings antes de descargar listas.'
+        message: t('status.batchNeedsConfigMessage')
       })
       return false
     }
@@ -328,7 +338,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     const uniqueUrls = dedupeUrls(urls)
 
     if (uniqueUrls.length === 0) {
-      setProgress({ status: 'failed', message: 'No hay videos para descargar.' })
+      setProgress({ status: 'failed', message: t('status.noVideosMessage') })
       return false
     }
 
@@ -346,14 +356,14 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
 
     setDownloadTasks((currentTasks) => [
       ...taskInputs.map((taskInput) =>
-        createDownloadTask(taskInput, taskMetadataByUrl.get(taskInput.url))
+        createDownloadTask(taskInput, taskMetadataByUrl.get(taskInput.url), t('status.queuedMessage'))
       ),
       ...currentTasks
     ])
 
     let completed = 0
     let failed = 0
-    const sourceLabel = source === 'playlist' ? 'playlist' : 'videos clickeados'
+    const sourceLabel = source === 'playlist' ? t('status.batchSourcePlaylist') : t('status.batchSourceYouTube')
 
     setActivePage('downloads')
     isBatchDownloadingRef.current = true
@@ -363,7 +373,11 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     setProgress({
       status: 'starting',
       step: 'preparing',
-      message: `Descargando ${uniqueUrls.length} videos de ${sourceLabel} en grupos de ${MAX_PARALLEL_BATCH_DOWNLOADS}...`
+      message: t('status.batchStarting', {
+        count: uniqueUrls.length,
+        source: sourceLabel,
+        batchSize: MAX_PARALLEL_BATCH_DOWNLOADS
+      })
     })
 
     try {
@@ -378,7 +392,9 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
               taskId: input.taskId
             })}`
           )
-          setDownloadTasks((currentTasks) => applyTaskResult(currentTasks, input.taskId, result))
+          setDownloadTasks((currentTasks) =>
+            applyTaskResult(currentTasks, input.taskId, result, formatCompletedDownloadMessage)
+          )
 
           if (result.ok) {
             completed += 1
@@ -390,7 +406,11 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
             status: failed > 0 ? 'processing' : 'downloading',
             step: 'downloading-file',
             percent: Math.round(((completed + failed) / taskInputs.length) * 100),
-            message: `Lista: ${completed} completadas, ${failed} fallidas, ${taskInputs.length - completed - failed} pendientes.`
+            message: t('status.batchProgress', {
+              completed,
+              failed,
+              pending: taskInputs.length - completed - failed
+            })
           })
         }
       )
@@ -401,8 +421,8 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
         percent: 100,
         message:
           failed > 0
-            ? `Descarga de lista terminada con ${completed} completadas y ${failed} fallidas.`
-            : `Descarga de lista completada: ${completed} videos.`
+            ? t('status.batchFinishedWithFailures', { completed, failed })
+            : t('status.batchCompleted', { completed })
       })
       return isBatchDownloadSuccessful(failed)
     } finally {
@@ -422,12 +442,12 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
     }
 
     if (!cleanUrl) {
-      setProgress({ status: 'failed', message: 'Pega una URL de YouTube primero.' })
+      setProgress({ status: 'failed', message: t('status.missingYouTubeUrlMessage') })
       return
     }
 
     if (!looksLikeYouTubeUrl(cleanUrl)) {
-      setProgress({ status: 'failed', message: 'La URL debe ser de youtube.com o youtu.be.' })
+      setProgress({ status: 'failed', message: t('status.invalidYouTubeUrlMessage') })
       return
     }
 
@@ -436,12 +456,12 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
       previewRequestIdRef.current = requestId
       setIsPreviewLoading(true)
       isPreviewLoadingRef.current = true
-      setProgress({ status: 'starting', step: 'preparing', message: 'Cargando preview de metadata...' })
+      setProgress({ status: 'starting', step: 'preparing', message: t('status.loadingPreviewMessage') })
       console.log(`[renderer:preview] submit-start ${cleanUrl}`)
 
       const preview = await window.whoDownloads.previewVideo(cleanUrl).catch((error: unknown) => ({
         ok: false as const,
-        error: error instanceof Error ? error.message : 'No se pudo cargar la preview.'
+        error: error instanceof Error ? error.message : t('status.previewFailedMessage')
       }))
       console.log(`[renderer:preview] submit-result ${JSON.stringify({ ok: preview.ok })}`)
 
@@ -459,7 +479,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
 
       setMetadata(preview.metadata)
       setMetadataUrl(cleanUrl)
-      setProgress({ status: 'idle', message: 'Preview lista. Revisa los datos y descarga.' })
+      setProgress({ status: 'idle', message: t('status.previewReadyMessage') })
       return
     }
 
@@ -509,6 +529,7 @@ export function DownloadProvider({ children }: { children: ReactNode }): JSX.Ele
       format,
       quality,
       settings,
+      t,
       updateFormat,
       updateQuality
     ]

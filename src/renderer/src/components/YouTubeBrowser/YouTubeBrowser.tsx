@@ -1,3 +1,4 @@
+import { useLanguage } from '../../contexts/LanguageContext'
 import type { YouTubeWebviewElement } from '../../types/ipc'
 import './YouTubeBrowser.scss'
 
@@ -16,6 +17,8 @@ function YouTubeBrowser({
   onUseVideo,
   onQuickDownloadVideo
 }: YouTubeBrowserProps): JSX.Element {
+  const { t } = useLanguage()
+
   return (
     <section className="youtube-browser">
       {youtubeWebviewPreloadPath ? (
@@ -28,14 +31,14 @@ function YouTubeBrowser({
           allowpopups="true"
         />
       ) : (
-        <div className="youtube-browser__loading">Cargando YouTube...</div>
+        <div className="youtube-browser__loading">{t('youtube.loading')}</div>
       )}
 
       <div className="youtube-floating-list">
         <div className="youtube-floating-list__header">
           <div>
             <p className="youtube-floating-list__eyebrow">YouTube</p>
-            <h2 className="youtube-floating-list__title">Videos clickeados</h2>
+            <h2 className="youtube-floating-list__title">{t('youtube.clickedTitle')}</h2>
           </div>
           <span className="youtube-floating-list__count">{clickedVideos.length}</span>
         </div>
@@ -47,10 +50,10 @@ function YouTubeBrowser({
                 <span className="break-anywhere">{videoUrl}</span>
                 <div className="youtube-floating-list__actions">
                   <button type="button" onClick={() => onUseVideo(videoUrl)}>
-                    Usar
+                    {t('youtube.use')}
                   </button>
                   <button type="button" onClick={() => onQuickDownloadVideo(videoUrl)}>
-                    Rapida
+                    {t('youtube.quick')}
                   </button>
                 </div>
               </li>
@@ -58,7 +61,7 @@ function YouTubeBrowser({
           </ol>
         ) : (
           <p className="youtube-floating-list__empty">
-            Click derecho sobre un video para agregarlo.
+            {t('youtube.rightClickEmpty')}
           </p>
         )}
       </div>

@@ -1,4 +1,5 @@
 import { Trash2, Zap } from 'lucide-react'
+import { useLanguage } from '../../contexts/LanguageContext'
 import { formatDuration } from '../../utils/formatDuration'
 import type { QueueVideo } from './types'
 
@@ -15,6 +16,8 @@ function Video({
   onQuickDownloadVideo,
   onRemoveVideo
 }: VideoProps): JSX.Element {
+  const { t } = useLanguage()
+
   return (
     <li className="cola-video">
       <div className="cola-video__info">
@@ -29,8 +32,8 @@ function Video({
           className="cola-video__action"
           type="button"
           disabled={isDisabled}
-          aria-label="Descargar rapido"
-          data-tooltip="Descarga rapida"
+          aria-label={t('queue.quickDownloadAria')}
+          data-tooltip={t('queue.quickDownloadTooltip')}
           onClick={() => onQuickDownloadVideo(video.url)}
         >
           <Zap aria-hidden="true" size={16} strokeWidth={2.2} />
@@ -39,8 +42,8 @@ function Video({
           className="cola-video__action cola-video__action--danger"
           type="button"
           disabled={isDisabled}
-          aria-label="Quitar video"
-          data-tooltip="Quitar"
+          aria-label={t('queue.removeVideoAria')}
+          data-tooltip={t('queue.removeTooltip')}
           onClick={() => onRemoveVideo(video.id)}
         >
           <Trash2 aria-hidden="true" size={16} strokeWidth={2.2} />

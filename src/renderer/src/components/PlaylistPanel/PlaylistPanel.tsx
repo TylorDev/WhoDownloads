@@ -1,4 +1,5 @@
 import type { FormEvent } from 'react'
+import { useLanguage } from '../../contexts/LanguageContext'
 import Cola from '../Cola/Cola'
 import type { QueueVideo } from '../Cola/types'
 import type { PendingLongPlaylist } from '../../utils/playlistLimit'
@@ -37,21 +38,23 @@ function PlaylistPanel({
   onLoadLongPlaylistFirst100,
   isBatchDownloading
 }: PlaylistPanelProps): JSX.Element {
+  const { t } = useLanguage()
   const hasVideos = videos.length > 0
+  const videoCountKey = videos.length === 1 ? 'playlist.videoCountOne' : 'playlist.videoCountMany'
 
   return (
     <div className="playlist-panel">
       <div className="playlist-panel__header">
-        <h2 className="playlist-panel__title">Playlist de YouTube</h2>
+        <h2 className="playlist-panel__title">{t('playlist.panelTitle')}</h2>
       </div>
 
       <form className="playlist-panel__form" onSubmit={onFetchPlaylist}>
         <label className="field" htmlFor="playlist-url">
-          <span className="field__label">URL de Playlist</span>
+          <span className="field__label">{t('playlist.urlLabel')}</span>
           <input
             id="playlist-url"
             className="form-control form-control--input"
-            placeholder="https://www.youtube.com/playlist?list=PLxxxxxxx"
+            placeholder={t('playlist.urlPlaceholder')}
             value={playlistUrl}
             onChange={(event) => onPlaylistUrlChange(event.target.value)}
             disabled={isLoading}
@@ -62,7 +65,7 @@ function PlaylistPanel({
           type="submit"
           disabled={isLoading || isBatchDownloading || !playlistUrl.trim()}
         >
-          {isLoading ? 'Obteniendo lista...' : 'Obtener lista'}
+          {isLoading ? t('playlist.fetchLoading') : t('playlist.fetch')}
         </button>
       </form>
 
@@ -72,10 +75,9 @@ function PlaylistPanel({
 
       {pendingLongPlaylist && (
         <div className="playlist-panel__warning" role="alert">
-          <p className="playlist-panel__warning-title">La lista es demasiado larga.</p>
+          <p className="playlist-panel__warning-title">{t('playlist.longWarningTitle')}</p>
           <p className="playlist-panel__warning-copy">
-            Puede causar inestabilidades en la app. Esta playlist tiene{' '}
-            {pendingLongPlaylist.entries.length} videos.
+            {t('playlist.longWarningCopy', { count: pendingLongPlaylist.entries.length })}
           </p>
           <div className="playlist-panel__warning-actions">
             <button
@@ -84,7 +86,7 @@ function PlaylistPanel({
               disabled={isBatchDownloading}
               onClick={onLoadLongPlaylistAll}
             >
-              Cargar de todas formas
+              {t('playlist.loadAnyway')}
             </button>
             <button
               className="primary-button"
@@ -92,7 +94,7 @@ function PlaylistPanel({
               disabled={isBatchDownloading}
               onClick={onLoadLongPlaylistFirst100}
             >
-              Cargar solo los 100 primeros
+              {t('playlist.loadFirst100')}
             </button>
           </div>
         </div>
@@ -102,14 +104,14 @@ function PlaylistPanel({
         <div className="playlist-panel__results">
           <div className="playlist-panel__results-header">
             <p className="playlist-panel__results-title">{playlistTitle}</p>
-            <span className="playlist-panel__count">{videos.length} videos</span>
+            <span className="playlist-panel__count">{t(videoCountKey, { count: videos.length })}</span>
           </div>
           <Cola
-            title="Cola de playlist"
-            emptyMessage="Quita videos o carga una playlist para llenar la cola."
+            title={t('playlist.queueTitle')}
+            emptyMessage={t('playlist.queueEmpty')}
             videos={videos}
             isDisabled={isBatchDownloading}
-            downloadLabel="Descargar playlist"
+            downloadLabel={t('playlist.downloadLabel')}
             onDownloadAll={onDownloadPlaylist}
             onQuickDownloadVideo={onQuickDownloadVideo}
             onRemoveVideo={onRemoveVideo}

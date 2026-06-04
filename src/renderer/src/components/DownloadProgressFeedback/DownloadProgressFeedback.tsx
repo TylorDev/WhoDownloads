@@ -1,5 +1,6 @@
 import { Check, CircleX, Download, Image, Layers2, LoaderCircle, RotateCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useLanguage, type TranslationKey } from '../../contexts/LanguageContext'
 import type { DownloadStep, DownloadTaskStatus } from '../../types/ipc'
 import './DownloadProgressFeedback.scss'
 
@@ -18,7 +19,7 @@ export type DownloadProgressFeedbackValue = {
 
 type TimelineStep = {
   id: DownloadStep
-  label: string
+  labelKey: TranslationKey
   Icon: typeof LoaderCircle
 }
 
@@ -27,21 +28,21 @@ type DownloadProgressFeedbackProps = {
   compact?: boolean
 }
 
-const STEP_LABELS: Record<DownloadStep, string> = {
-  preparing: 'Preparando descarga',
-  'downloading-file': 'Descargando archivo',
-  'downloading-cover': 'Descargando cover',
-  converting: 'Convirtiendo',
-  merging: 'Unificando archivo',
-  completed: 'Completado',
-  failed: 'Error'
+const STEP_LABEL_KEYS: Record<DownloadStep, TranslationKey> = {
+  preparing: 'status.stepPreparingDownload',
+  'downloading-file': 'status.stepDownloadingFile',
+  'downloading-cover': 'status.stepDownloadingCover',
+  converting: 'status.stepConverting',
+  merging: 'status.stepMerging',
+  completed: 'status.stepCompleted',
+  failed: 'status.stepFailed'
 }
 
 const DEFAULT_TIMELINE_STEPS: TimelineStep[] = [
-  { id: 'preparing', label: 'Preparando', Icon: LoaderCircle },
-  { id: 'downloading-file', label: 'Archivo', Icon: Download },
-  { id: 'converting', label: 'Convertir', Icon: RotateCw },
-  { id: 'completed', label: 'Completo', Icon: Check }
+  { id: 'preparing', labelKey: 'status.timelinePreparing', Icon: LoaderCircle },
+  { id: 'downloading-file', labelKey: 'status.timelineFile', Icon: Download },
+  { id: 'converting', labelKey: 'status.timelineConvert', Icon: RotateCw },
+  { id: 'completed', labelKey: 'status.timelineComplete', Icon: Check }
 ]
 
 function getFallbackStep(progress: DownloadProgressFeedbackValue): DownloadStep | undefined {
@@ -68,32 +69,32 @@ function getFallbackStep(progress: DownloadProgressFeedbackValue): DownloadStep 
   return progress.status
 }
 
-function getStatusLabel(status: FeedbackStatus): string {
+function getStatusLabel(status: FeedbackStatus): TranslationKey {
   if (status === 'idle') {
-    return 'En espera'
+    return 'status.idle'
   }
 
   if (status === 'queued') {
-    return 'En cola'
+    return 'status.queued'
   }
 
   if (status === 'starting') {
-    return 'Preparando'
+    return 'status.starting'
   }
 
   if (status === 'downloading') {
-    return 'Descargando'
+    return 'status.downloading'
   }
 
   if (status === 'processing') {
-    return 'Procesando'
+    return 'status.processing'
   }
 
   if (status === 'completed') {
-    return 'Completado'
+    return 'status.completed'
   }
 
-  return 'Error'
+  return 'status.failed'
 }
 
 function getProgressWidth(
@@ -128,6 +129,7 @@ function DownloadProgressFeedback({
   progress,
   compact = false
 }: DownloadProgressFeedbackProps): JSX.Element {
+  const { t } = useLanguage()
   const [seenOptionalSteps, setSeenOptionalSteps] = useState<Set<DownloadStep>>(() => new Set())
   const progressPercent = Math.max(0, Math.min(100, progress.percent ?? 0))
   const hasRealProgress = typeof progress.percent === 'number'
@@ -140,7 +142,7 @@ function DownloadProgressFeedback({
   const progressMeta = [
     progressLabel,
     progress.speed,
-    progress.eta ? `ETA ${progress.eta}` : null
+    progress.eta ? t('status.eta', { eta: progress.eta }) : null
   ].filter(Boolean)
   const message = progress.error || progress.message
 
@@ -160,29 +162,29 @@ function DownloadProgressFeedback({
     const history = new Set([...(progress.stepHistory ?? []), ...seenOptionalSteps])
 
     if (history.has('downloading-cover') || currentStep === 'downloading-cover') {
-      steps.splice(2, 0, { id: 'downloading-cover', label: 'Cover', Icon: Image })
+      steps.splice(2, 0, { id: 'downloading-cover', labelKey: 'status.timelineCover', Icon: Image })
     }
 
     if (history.has('merging') || currentStep === 'merging') {
       const completedIndex = steps.findIndex((step) => step.id === 'completed')
-      steps.splice(completedIndex, 0, { id: 'merging', label: 'Unificar', Icon: Layers2 })
+      steps.splice(completedIndex, 0, { id: 'merging', labelKey: 'status.timelineMerge', Icon: Layers2 })
     }
 
     if (currentStep === 'failed') {
       const completedIndex = steps.findIndex((step) => step.id === 'completed')
-      steps.splice(completedIndex, 1, { id: 'failed', label: 'Error', Icon: CircleX })
+      steps.splice(completedIndex, 1, { id: 'failed', labelKey: 'status.timelineError', Icon: CircleX })
     }
 
     return steps
   }, [currentStep, progress.stepHistory, seenOptionalSteps])
 
-  const statusLabel = getStatusLabel(progress.status)
+  const statusLabel = t(getStatusLabel(progress.status))
   const stepLabel =
     progress.status === 'queued'
-      ? 'Esperando turno'
+      ? t('status.queuedStep')
       : currentStep
-        ? STEP_LABELS[currentStep]
-        : 'Listo para descargar'
+        ? t(STEP_LABEL_KEYS[currentStep])
+        : t('status.readyStep')
   const activeStepIndex = currentStep
     ? timelineSteps.findIndex((step) => step.id === currentStep)
     : -1
@@ -203,10 +205,10 @@ function DownloadProgressFeedback({
           </span>
           <span className="download-progress-feedback__step">{stepLabel}</span>
           {isDownloadingWithoutPercent && (
-            <span className="download-progress-feedback__hint">Calculando progreso...</span>
+            <span className="download-progress-feedback__hint">{t('status.calculatingProgress')}</span>
           )}
           {isApproximateProgress && (
-            <span className="download-progress-feedback__hint">Progreso aproximado</span>
+            <span className="download-progress-feedback__hint">{t('status.approximateProgress')}</span>
           )}
         </div>
         {progressMeta.length > 0 && (
@@ -214,7 +216,7 @@ function DownloadProgressFeedback({
         )}
       </div>
 
-      <ol className="status-steps" aria-label="Progreso de descarga">
+      <ol className="status-steps" aria-label={t('status.progressAriaLabel')}>
         {timelineSteps.map((step, index) => {
           const Icon = step.Icon
           const isActive = step.id === currentStep
@@ -234,7 +236,7 @@ function DownloadProgressFeedback({
               <span className="status-steps__icon">
                 <Icon size={15} strokeWidth={2.15} aria-hidden="true" />
               </span>
-              <span className="status-steps__label">{step.label}</span>
+              <span className="status-steps__label">{t(step.labelKey)}</span>
             </li>
           )
         })}
@@ -259,7 +261,7 @@ function DownloadProgressFeedback({
       </div>
 
       <p className="download-progress-feedback__message break-anywhere">
-        {message || 'Esperando progreso...'}
+        {message || t('status.waitingProgress')}
       </p>
     </div>
   )

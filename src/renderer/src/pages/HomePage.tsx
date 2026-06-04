@@ -4,9 +4,11 @@ import DownloadForm from '../components/DownloadForm/DownloadForm'
 import MetadataCard from '../components/MetadataCard/MetadataCard'
 import StatusPanel from '../components/StatusPanel/StatusPanel'
 import { useDownloadContext } from '../contexts/DownloadContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { useSettings } from '../contexts/SettingsContext'
 
 function HomePage(): JSX.Element {
+  const { t } = useLanguage()
   const download = useDownloadContext()
   const { settings, isLoading: isSettingsLoading, chooseDirectory } = useSettings()
   const lastQuickDownloadUrlRef = useRef('')
@@ -49,8 +51,8 @@ function HomePage(): JSX.Element {
   return (
     <section className="page-section">
       <div className="page-heading">
-        <p className="page-heading__eyebrow">Home</p>
-        <h1>Descarga un video</h1>
+        <p className="page-heading__eyebrow">{t('home.eyebrow')}</p>
+        <h1>{t('home.title')}</h1>
       </div>
       <DownloadForm
         url={download.url}
